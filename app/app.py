@@ -10,7 +10,8 @@ CORS(app)
 api = Api(app, version='1.0', title='Kostiner Tender Records', description='Information from the world of auctions')
 
 api.add_namespace(nameSpace)
-api.add_namespace(namespace_user)
+api.add_namespace(namespace_user, path='/users')
 
 if __name__ == '__main__':
+    print('in app')
     app.run(debug=True)

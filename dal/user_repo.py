@@ -1,30 +1,66 @@
-# from config import db
-# #קבלת המידע מהפו של יהודית
-# user_collection = db['users']
+from bson import ObjectId
+from pymongo import MongoClient,errors
+from dotenv import load_dotenv
+import os
+load_dotenv()
 
-class userDAL:
+
+from dal.createDB.connectDB import connect_to_mongodb
+
+client = connect_to_mongodb(f'mongodb+srv://{os.getenv("ATLAS_USER")}:{os.getenv("ATLAS_USER_PASSWORD")}@devcluster.tlutfgy.mongodb.net/')
+user_collection = client['Kostiner']['users']
+
+class user_repo:
     def get(self):
-        # return user_collection.find()
-        pass
+        try:
+            return list(user_collection.find())
+        except errors.PyMongoError as e:
+            print(f"An error occurred: {e}")
+            return []
+
     def get_by_id(self, user_id):
-        # return user_collection.find_one({'id': user_id})
-        pass
+        try:
+            print(type(ObjectId(user_id)))
+            print('user_repo get_by_id(self, user_id):')
+            return user_collection.find_one({'user_id': ObjectId(user_id)})
+        except errors.InvalidId as e:
+            print(f"Invalid ID: {e}")
+            return None
+        except errors.PyMongoError as e:
+            print(f"An error occurred: {e}")
+            return None
+
 
     def insert(self, data):
-        # result = user_collection.insert_one(data)
-        # return result
-        pass
+        try:
+            print('post in user_repo')
+            data['user_id'] = ObjectId()
+            result = user_collection.insert_one(data)
+            return result
+        except errors.PyMongoError as e:
+            print(f"An error occurred: {e}")
+            return None
 
+    def update(self, user_id, data):
+        try:
+            print('user_repo // def update(self, user_id, data)')
+            result = user_collection.update_one({'user_id': ObjectId(user_id)}, {'$set' : data})
+            print(result)
+            return result
+        except errors.InvalidId as e:
+            print(f'Imvakidid: {e}')
+            return None
+        except errors.PyMongoError as e:
+            print(f"An error occurred: {e}")
+            return None
 
-    def update(self, id, data):
-        data['user_id'] = id
-        # result = user_collection.update_one({'user_id':id},{'$set':data})
-        # return result
-        pass
-
-
-    def delete(self, id):
-        # result = user_collection.delete_one({'user_id': id})
-        # return result
-        pass
-
+    def delete(self, user_id):
+        try:
+            result = user_collection.delete_one({'user_id': ObjectId(user_id)})
+            return result.deleted_count
+        except errors.InvalidId as e:
+            print(f"Invalid ID: {e}")
+            return None
+        except errors.PyMongoError as e:
+            print(f"An error occurred: {e}")
+            return None
