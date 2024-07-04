@@ -21,21 +21,21 @@ class product_repo(base_repo):
 
     def update_by_category(self, category, data):
         try:
-            # בדיקה אם המוצר עם הקטגוריה הנוכחית קיים
             current_product = self.get_by_category(category)
+            print(f'current_product {current_product}')
+            print(f'data {data}')
             if not current_product:
+                print('if not current_product:')
                 abort(404, f"Product with category '{category}' doesn't exist.")
 
-            # בדיקה אם יש שינוי בשם הקטגוריה
             if "category" in data and data["category"] != category:
-                # בדיקה אם קיימת כבר קטגוריה עם השם החדש
+                print('if "category" in data and data["category"] != category:')
                 existing_category = self.collection.find_one({"category": data["category"]})
                 if existing_category:
+                    print('if existing_category:')
                     abort(400, "Product with this category already exists.")
 
-            # ביצוע העדכון במסמך לפי הקטגוריה הנתונה
             result = self.collection.update_one({"category": category}, {'$set': data})
-
             return result
         except ValueError as ve:
             print(f"ValueError: {ve}")
@@ -45,7 +45,7 @@ class product_repo(base_repo):
             return None
         except Exception as e:
             print(f"Unexpected error: {e}")
-            return None
+            return e
 
 
     def delete_by_category(self, category):
@@ -66,19 +66,18 @@ class product_repo(base_repo):
             print(f"Unexpected error: {e}")
             return False
 
-
     def insert(self, data):
         try:
             # Check if product with same category already exists
             if self.collection.find_one({"category": data["category"]}):
                 abort(400, "Product with this category already exists.")
             # Insert new product into database
-            result = self.collection.insert_one(data)
+            return self.collection.insert_one(data)
             # Return the newly inserted product
-            return data
+            # return data
         except errors.PyMongoError as e:
             print(f"An error occurred: {e}")
             return None, "An error occurred while inserting the product."
         except Exception as e:
             print(f"Unexpected error: {e}")
-            return None, "An unexpected error occurred."
+            return e

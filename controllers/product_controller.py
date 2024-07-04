@@ -1,5 +1,7 @@
 from flask import request
 from flask_restx import Resource
+from pymongo.results import UpdateResult
+from werkzeug.exceptions import BadRequest
 
 from services import product_service
 from models_swagger.product_model import nameSpace_product as namespace, product_model
@@ -31,13 +33,19 @@ class GetProductByCategory(Resource):
 class PostProduct(Resource):
     @namespace.doc('create_product')
     @namespace.expect(product_model)
-    @namespace.marshal_with(product_model)
+    @namespace.marshal_with(product_model, 201)
     def post(self):
         '''create a new product'''
         new_product = request.json
         result = product_service.create(new_product)
-        print(result)
-        return result, 201
+        print('====in product controller in post=====')
+        print(f'result', {result})
+        print(f'type(result) {type(result)}')
+        print(f'isinstance(result, BadRequest) {isinstance(result, BadRequest)}')
+        if not isinstance(result, BadRequest):
+            print('in if')
+            return product_service.get_by_category(new_product['category'])
+        namespace.abort(result.code, result.description)
 
 
 @namespace.route('/put-product/<string:category>')
@@ -49,11 +57,19 @@ class UpdateProduct(Resource):
         '''update product by category'''
         update_product = request.json
         result = product_service.update(category, update_product)
-        if result is not None and result.modified_count > 0:
-            updated_product = product_service.get_by_category(category)
+        print('====in product controller in put=====')
+        print(f'type(result) {type(result)}')
+        print(f'result {result}')
+        if isinstance(result, UpdateResult) and result.matched_count > 0:
+            updated_product = product_service.get_by_category(update_product['category'])
+            print(f'updated_product {updated_product}')
             return updated_product
-        else:
-            namespace.abort(404, f"product {category} doesn't exist")
+        elif isinstance(result, BadRequest):
+            print(f'{type(result)}')
+            print(f'result {result}')
+            print(f'{result.code}')
+            namespace.abort(result.code, result.description)
+        namespace.abort(result.code, result.description)
 
 
 @namespace.route('/delete-product/<string:category>')
