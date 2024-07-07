@@ -14,13 +14,36 @@ class product_repo(base_repo):
 
     def get_by_category(self, category):
         try:
-            return self.collection.find_one({"category": category})
+            if self.collection is None:
+                print("Collection is null.")
+                return False
+
+                # בדיקה אם ה-collection ריק
+            if self.collection.count_documents({}) == 0:
+                print("Collection is empty.")
+                return False
+
+            # בדיקה אם הקטגוריה קיימת לפני המחיקה
+            existing_category = self.collection.find_one({"category": category})
+            if not existing_category:
+                print(f"Category '{category}' not found.")
+                return False
+            return existing_category
         except errors.PyMongoError as e:
             print(f"An error occurred: {e}")
             return None
 
     def update_by_category(self, category, data):
         try:
+            if self.collection is None:
+                print("Collection is null.")
+                return False
+
+                # בדיקה אם ה-collection ריק
+            if self.collection.count_documents({}) == 0:
+                print("Collection is empty.")
+                return False
+
             current_product = self.get_by_category(category)
             print(f'current_product {current_product}')
             print(f'data {data}')
@@ -47,9 +70,24 @@ class product_repo(base_repo):
             print(f"Unexpected error: {e}")
             return e
 
-
     def delete_by_category(self, category):
         try:
+            # בדיקה אם ה-collection ריק
+            if self.collection is None:
+                print("Collection is null.")
+                return False
+
+                # בדיקה אם ה-collection ריק
+            if self.collection.count_documents({}) == 0:
+                print("Collection is empty.")
+                return False
+
+            # בדיקה אם הקטגוריה קיימת לפני המחיקה
+            existing_category = self.collection.find_one({"category": category})
+            if not existing_category:
+                print(f"Category '{category}' not found.")
+                return False
+
             # מחיקת המסמך לפי הקטגוריה
             result = self.collection.delete_one({"category": category})
 
@@ -68,9 +106,9 @@ class product_repo(base_repo):
 
     def insert(self, data):
         try:
-            # Check if product with same category already exists
-            if self.collection.find_one({"category": data["category"]}):
-                abort(400, "Product with this category already exists.")
+            if self.collection is not None and self.collection.count_documents({}) != 0:
+                if self.collection.find_one({"category": data["category"]}):
+                    abort(400, "Product with this category already exists.")
             # Insert new product into database
             return self.collection.insert_one(data)
             # Return the newly inserted product

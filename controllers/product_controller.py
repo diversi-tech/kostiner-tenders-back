@@ -5,6 +5,7 @@ from werkzeug.exceptions import BadRequest
 
 from services import product_service
 from models_swagger.product_model import nameSpace_product as namespace, product_model
+from services.auth_service import policy_required
 
 product_service = product_service
 
@@ -53,6 +54,7 @@ class UpdateProduct(Resource):
     @namespace.doc('update_product')
     @namespace.expect(product_model)
     @namespace.marshal_with(product_model)
+    @policy_required('admin')
     def put(self, category):
         '''update product by category'''
         update_product = request.json
@@ -75,6 +77,7 @@ class UpdateProduct(Resource):
 @namespace.route('/delete-product/<string:category>')
 class DeleteProductByCategory(Resource):
     @namespace.doc('delete_product')
+    @policy_required('admin')
     def delete(self, category):
         '''delete product by category'''
         count_delete = product_service.delete(category)
