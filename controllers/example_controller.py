@@ -1,7 +1,11 @@
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_restx import Resource, fields
+
+from services.auth_service import policy_required
 from services.example_service import dataService
 from models.example_model import nameSpace, data_model
+from models.login_model import  login_model
+
 from flask import Flask, request, jsonify
 
 data_service = dataService()
@@ -9,15 +13,16 @@ data_service = dataService()
 @nameSpace.route('/')
 class dataList(Resource):
     @nameSpace.doc('list_data',security='jwt')
-    @nameSpace.marshal_list_with(data_model)
+    @nameSpace.marshal_list_with(login_model)
     @jwt_required()
+    @policy_required('user')
     def get(self):
         '''here write description of method'''
         return data_service.get_all_datas()
 
     @nameSpace.doc('create_data',security='jwt')
-    @nameSpace.expect(data_model)
-    @nameSpace.marshal_with(data_model, code=201)
+    @nameSpace.expect(login_model)
+    @nameSpace.marshal_with(login_model, code=201)
     @jwt_required()
     def post(self):
         '''Create a new data entry'''
@@ -27,7 +32,7 @@ class dataList(Resource):
 @nameSpace.route('/<string:data_id>')
 class dataDetail(Resource):
     @nameSpace.doc('get_data')
-    @nameSpace.marshal_with(data_model)
+    @nameSpace.marshal_with(login_model)
     @nameSpace.doc(security='jwt')
     @jwt_required()
     def get(self, data_id):
@@ -39,8 +44,8 @@ class dataDetail(Resource):
         nameSpace.abort(404, f"Data {data_id} doesn't exist")
 
     @nameSpace.doc('update_data')
-    @nameSpace.expect(data_model)
-    @nameSpace.marshal_with(data_model)
+    @nameSpace.expect(login_model)
+    @nameSpace.marshal_with(login_model)
     @nameSpace.doc(security='jwt')
     @jwt_required()
     def put(self, data_id):

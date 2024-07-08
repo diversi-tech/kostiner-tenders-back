@@ -7,7 +7,7 @@ from config import db
 class dataDAL:
     def __init__(self):
         # Initialize the connection to MongoDB or any other data source
-        self.collection = db['item']
+        self.collection = db['users']
 
     def get_all_datas(self):
         data_list = list(self.collection.find({}, {'_id': 0}))
