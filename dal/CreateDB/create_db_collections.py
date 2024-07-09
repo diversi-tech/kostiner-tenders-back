@@ -4,7 +4,7 @@ import os
 from pymongo import errors
 from dotenv import load_dotenv
 
-from CreateDB.connectDB import connect_to_mongodb
+from dal.createDB.connectDB import connect_to_mongodb
 
 load_dotenv()
 

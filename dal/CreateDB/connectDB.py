@@ -5,15 +5,17 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-def connect_to_mongodb():
+def connect_to_mongodb(
+        mongo_uri=f'mongodb+srv://{os.getenv("ATLAS_USER")}:{os.getenv("ATLAS_USER_PASSWORD")}@devcluster.tlutfgy.mongodb.net/?retryWrites=true&w=majority&appName=DevCluster'
+):
     try:
-        mongo_uri = f'mongodb+srv://{os.getenv("ATLAS_USER")}:{os.getenv("ATLAS_USER_PASSWORD")}@devcluster.tlutfgy.mongodb.net/?retryWrites=true&w=majority&appName=DevCluster'
+        mongo_uri = mongo_uri
         client = MongoClient(mongo_uri)
         client.admin.command('ping')
         print("Pinged your deployment. You successfully connected to MongoDB!")
         return client
     except errors.ConnectionError as ce:
-        pprint(f"Connection Error: {ce}\n"
+        print(f"Connection Error: {ce}\n"
               f"Failed to connect using the provided URI: {mongo_uri}\n"
               f"Please check your username: {os.getenv('ATLAS_USER')} and password: {os.getenv('ATLAS_USER_PASSWORD')}")
         raise
