@@ -1,6 +1,6 @@
-from flask_restx import Resource, fields
+from flask_restx import Resource
 from services.example_service import dataService
-from models.example_model import nameSpace, data_model
+from models_swagger.example_model import nameSpace, data_model
 
 data_service = dataService()
 
