@@ -19,15 +19,6 @@ authorizations = {
 app = Flask(__name__)
 app.config['JWT_SECRET_KEY'] = 'chgc#sd1'  # Change to your actual secret key
 
-app.config['JWT_TOKEN_LOCATION'] = ['cookies']
-app.config['JWT_COOKIE_CSRF_PROTECT'] = True
-app.config['SESSION_COOKIE_HTTPONLY'] = True
-# app.config['JWT_COOKIE_SECURE'] = False
-# app.config['JWT_COOKIE_CSRF_PROTECT'] = False
-# app.config['JWT_CSRF_CHECK_FORM'] = True
-
-jwt = JWTManager(app)
-# הגדרות Flask-Mail
 app.config.update(
     MAIL_SERVER='smtp.gmail.com', # שדרג לשימוש בשרת האימייל שלך
     MAIL_PORT=587,
@@ -36,49 +27,17 @@ app.config.update(
     MAIL_PASSWORD='m p q y j x r b b h m b o n h v' ,# החלף בסיסמא האמיתית שלך
     MAIL_DEFAULT_SENDER= 'kustiner1@gmail.com'
 )
-
+app.config['JWT_TOKEN_LOCATION'] = ['headers']
 mail.init_app(app)
 jwt = JWTManager(app)
 app.before_request(before_request_middleware())
 
-CORS(app, resources={r"/*": {
-    "origins": ["http://localhost:5173", "http://127.0.0.1:5173"],
-    "supports_credentials": True,
-    "allow_headers": ["Content-Type", "Authorization"],
-    "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
-}})
+CORS(app, supports_credentials=True)
 api = Api()
 
 api = Api(app, version='1.0', title='Kostiner Tender Records', description='Information from the world of auctions', authorizations=authorizations, security='jwt')
 
-# @app.after_request
-# def after_request(response):
-#     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-#     response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS,DELETE,PUT')
-#     response.headers.add('Access-Control-Allow-Origin', '*')
-#     return response
 
-# def jwt_required_from_cookie(fn):
-#     @wraps(fn)
-#     def wrapper(*args, **kwargs):
-#         try:
-#             # שליפת העוגיות מהבקשה
-#             cookies = request.cookies
-#
-#             # קבלת הטוקן מתוך העוגיה
-#             access_token = cookies.get('access_token')
-#
-#             if access_token:
-#                 # הגדרת הכותרת Authorization עם הטוקן מתוך העוגיה
-#                 request.headers['Authorization'] = f'Bearer {access_token}'
-#                 verify_jwt_in_request()  # אימות הטוקן
-#                 return fn(*args, **kwargs)
-#             else:
-#                 return jsonify({"msg": "Missing access token"}), 401
-#         except Exception as e:
-#             return jsonify({"msg": "Token verification failed", "error": str(e)}), 401
-#
-#     return wrapper
 from controllers.controller_login import auth_ns
 from controllers.example_controller import nameSpace
 from controllers.user_controller import namespace as nameSpace_user

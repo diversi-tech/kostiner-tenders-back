@@ -40,34 +40,38 @@ class Login(Resource):
         user_tuple=auth_service.verify_user(username, password)
 
         user_dict = user_tuple[0]
-
+        user_id = str(user_dict['_id'])  # להמיר את ה-ObjectId למחרוזת
+        print(f"user_id: {user_id}")
         if user_dict:
             userrole = user_dict['role']
-            additional_claims = {'role': userrole}
-            access_token =create_access_token(identity=userrole, additional_claims=additional_claims)
-            #return {'access_token': 'Bearer ' + access_token}, 200
-            print("access_token",access_token)
-            serialized_user = serialize_user(user_tuple)
-            print("serialized_user1",serialized_user)  # For debugging
-
-            # Create JSON response data
-            response_data = {
-                'message': 'Login successful',
-                'access_token': 'Bearer ' + access_token,
-                'user':serialized_user
+            additional_claims = {
+                'role': userrole,
+                'user_id': user_id
             }
-            response = make_response(jsonify(response_data))
-            response.set_cookie('access_token', access_token,
-                                httponly=True,
-                                secure=False,  # שים לב: False לפיתוח מקומי, True לייצור
-                                samesite='Lax',
-                                domain='localhost',  # או הדומיין המתאים
-                                path='/')
-            print( response.headers)
-            #response.set_cookie('access_token', access_token, httponly=True, secure=True, samesite='Strict')
-            return response
-        else:
-            return jsonify({'message': 'Invalid credentials'}), 401
+            access_token =create_access_token(identity=userrole, additional_claims=additional_claims)
+            return {'access_token': 'Bearer ' + access_token}, 200
+        #     print("access_token",access_token)
+        #     serialized_user = serialize_user(user_tuple)
+        #     print("serialized_user1",serialized_user)  # For debugging
+        #
+        #     # Create JSON response data
+        #     response_data = {
+        #         'message': 'Login successful',
+        #         'access_token': 'Bearer ' + access_token,
+        #         'user':serialized_user
+        #     }
+        #     response = make_response(jsonify(response_data))
+        #     response.set_cookie('access_token', access_token,
+        #                         httponly=True,
+        #                         secure=False,
+        #                         samesite='None',
+        #                         domain='localhost',
+        #                         path='/')
+        #     print( response.headers)
+        #     #response.set_cookie('access_token', access_token, httponly=True, secure=True, samesite='Strict')
+        #     return response
+        # else:
+        #      return jsonify({'message': 'Invalid credentials'}), 401
 
 @auth_ns.route('/reset-password/request')
 class PasswordResetRequest(Resource):
@@ -84,8 +88,8 @@ class PasswordResetRequest(Resource):
             return {'message': 'User not found'}, 400
 
         # Generate a reset token and identifier
-        identifier = auth_service.generate_reset_token(email, username)
-        reset_link = f"http://localhost:5173/reset-password/?id={identifier}"  # Use the identifier in the reset link
+        token = auth_service.generate_reset_token(email, username)
+        reset_link = f"http://localhost:5173/reset-password/?id"  # Use the identifier in the reset link
 
         msg = Message('Password Reset Request', recipients=[email])
         msg.html = f"""
@@ -107,25 +111,23 @@ class PasswordResetRequest(Resource):
             print(f'Failed to send email: {e}')
             return {'message': f'Failed to send email: {str(e)}'}, 500
 
-        response = make_response(jsonify({'message': 'Logged in successfully'}))
-        response.set_cookie('reset_token', identifier, httponly=True, secure=True, samesite='Strict')
-        return response
+        return token
 
-@auth_ns.route('/reset-password/verify')
-class PasswordResetVerify(Resource):
-    @auth_ns.expect(token_verify_model)
-    @auth_ns.response(200, 'Token verified')
-    @auth_ns.response(400, 'Invalid or expired token')
-    def post(self):
-        '''Verify password reset token'''
-        data = request.json
-        identifier = data.get('identifier')
-
-        reset_token_entry = auth_service.get_reset_token_entry(identifier)
-        if not reset_token_entry:
-            return {'message': 'Invalid or expired token'}, 400
-
-        return {'message': 'Token verified', 'email': reset_token_entry['email'], 'username': reset_token_entry['username']}, 200
+# @auth_ns.route('/reset-password/verify')
+# class PasswordResetVerify(Resource):
+#     @auth_ns.expect(token_verify_model)
+#     @auth_ns.response(200, 'Token verified')
+#     @auth_ns.response(400, 'Invalid or expired token')
+#     def post(self):
+#         '''Verify password reset token'''
+#         data = request.json
+#         identifier = data.get('identifier')
+#
+#         reset_token_entry = auth_service.get_reset_token_entry(identifier)
+#         if not reset_token_entry:
+#             return {'message': 'Invalid or expired token'}, 400
+#
+#         return {'message': 'Token verified', 'email': reset_token_entry['email'], 'username': reset_token_entry['username']}, 200
 
 @auth_ns.route('/reset-password/response', methods=['OPTIONS','POST'])
 class PasswordResetResponse(Resource):
@@ -133,24 +135,24 @@ class PasswordResetResponse(Resource):
     # @auth_ns.response(200, 'Password reset successful')
     # @auth_ns.response(200, 'Password reset email sent successfully')
     # @auth_ns.response(400, 'Invalid or expired reset token')
-    @auth_ns.expect(token_model)
-    @auth_ns.response(200, 'Password reset successful')
-    @auth_ns.response(400, 'Invalid or expired token')
-    @auth_ns.response(401, 'Token has expired')
-    @auth_ns.response(404, 'User not found')
-    @auth_ns.response(500, 'Unknown error')
-    def options(self):
-        """
-        מתודת OPTIONS - מאפשרת בקשות CORS.
-        """
-        return {'Allow': 'POST, OPTIONS'}, 200, {
-
-            'Access-Control-Allow-Origin': 'http://localhost:5173',
-            'Access-Control-Allow-Methods': 'POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-            'Access-Control-Allow-Credentials': 'true'
-
-        }
+    # @auth_ns.expect(token_model)
+    # @auth_ns.response(200, 'Password reset successful')
+    # @auth_ns.response(400, 'Invalid or expired token')
+    # @auth_ns.response(401, 'Token has expired')
+    # @auth_ns.response(404, 'User not found')
+    # @auth_ns.response(500, 'Unknown error')
+    # def options(self):
+    #     """
+    #     מתודת OPTIONS - מאפשרת בקשות CORS.
+    #     """
+    #     return {'Allow': 'POST, OPTIONS'}, 200, {
+    #
+    #         'Access-Control-Allow-Origin': 'http://localhost:5173',
+    #         'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    #         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    #         'Access-Control-Allow-Credentials': 'true'
+    #
+    #     }
 
     # @auth_ns.expect(token_model)
     @auth_ns.response(200, 'Password reset successful')
@@ -159,10 +161,9 @@ class PasswordResetResponse(Resource):
     @auth_ns.response(500, 'Unknown error')
     def post(self):
         data = request.json
-        identifier = data.get('identifier')  # קבלת ה-UUID מהבקשה
+        token = data.get('token')  # קבלת ה-UUID מהבקשה
         new_password=data.get('new_password')
-        print(identifier,"id")
-        result = auth_service.reset_password(identifier, new_password)
+        result = auth_service.reset_password(token, new_password)
         if isinstance(result, tuple):
             message, status_code = result
             return {'message': message}, status_code

@@ -9,7 +9,6 @@ class userService:
         return self.dal.get()
 
     def get_by_id(self, user_id):
-        # print('userService //def get_by_id(self, user_id):')
         return self.dal.get_by_id(user_id)
 
     def insert(self, data):

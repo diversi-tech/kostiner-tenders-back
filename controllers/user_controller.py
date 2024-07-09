@@ -6,6 +6,7 @@ from bson import ObjectId
 # from models import user
 from models_swagger.user_model import nameSpace_user as namespace, user_model
 from services import user_service
+from services.auth_service import policy_required
 
 
 @namespace.route('/')
@@ -17,6 +18,7 @@ class userList(Resource):
     @namespace.doc('list_user',security='jwt')
     @namespace.marshal_list_with(user_model)
     @jwt_required()
+    @policy_required('user')
     def get(self):
         '''get all users'''
         return self.user_service.get()
@@ -40,15 +42,17 @@ class user(Resource):
         self.user_service = user_service
 
     @namespace.doc('get_user')
-    @namespace.marshal_with(user_model)
+    # @namespace.marshal_with(user_model)
+    @jwt_required()
+    @policy_required('user')
     def get(self, user_id):
         '''get user by Id'''
         print('user_controller // def get(self, user_id):')
         user = self.user_service.get_by_id(user_id)
-        print(user)
         if user:
             return user
         namespace.abort(404, f"user {user_id} doesn't exist")
+
 
     @namespace.doc('update_user')
     @namespace.expect(user_model)

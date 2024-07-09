@@ -47,14 +47,19 @@ class AuthRepo:
         # print("list", list(self.user_collection.find({})))
         return self.user_collection.find_one({'email': email}) is not None
 
-    def get_reset_token_entry(self,identifier):
-        query = {'identifier': identifier}
-        token=self.token_collection.find_one(query)
-        if token:
-            token_value = token['token']
-            decoded_token = jwt.decode(token_value, os.getenv('JWT_SECRET_KEY'), algorithms=['HS256'])
-            print("decoded_token",decoded_token)
-            return decoded_token
+    def get_reset_token_entry(self,token):
+        try:
+            payload = jwt.decode(token, os.getenv('JWT_SECRET_KEY'), algorithms=['HS256'])
+            username = payload['username']
+            email = payload['email']
+            role =payload['role']
+            return payload
+        except jwt.ExpiredSignatureError:
+            return None, None
+        except jwt.InvalidTokenError:
+            return None, None
+
+
     def reset_password(self, email, role, new_password, username):
         # חיפוש המשתמש לפי האימייל והשם משתמש
         user = self.user_collection.find_one({'$and': [{'email': email}, {'username': username}, {'role': role}]})
@@ -86,6 +91,7 @@ class AuthRepo:
     #     return token
     def generate_reset_token(self, email, username):
         user = self.user_collection.find_one({'$and': [{'email': email}, {'first_name': username}]})
+        print(user)
         if not user:
             raise Exception("User not found")
 
@@ -97,18 +103,19 @@ class AuthRepo:
             'exp': datetime.utcnow() + timedelta(minutes=30)  # Token expiration time
         }
         token = jwt.encode(token_data, os.getenv('JWT_SECRET_KEY'), algorithm='HS256')
+        return token
 
-        identifier = str(uuid.uuid4())
-        # Save the token and identifier in the database
-        self.token_collection.insert_one({
-        'identifier': identifier,
-        'token': token,
-        'created_at': datetime.utcnow(),
-        'expires_at': datetime.utcnow() + timedelta(minutes=30),
-        'email': email,
-        'username': username
-        })
-        return identifier
+        # identifier = str(uuid.uuid4())
+        # # Save the token and identifier in the database
+        # self.token_collection.insert_one({
+        # 'identifier': identifier,
+        # 'token': token,
+        # 'created_at': datetime.utcnow(),
+        # 'expires_at': datetime.utcnow() + timedelta(minutes=30),
+        # 'email': email,
+        # 'username': username
+        # })
+        # return identifier
     def reset_password(self,email,role,new_password,username):
         user = self.user_collection.find_one({'$and': [{'email': email}, {'first_name': username},{'role': role}]})
         if user['email'] != email:

@@ -55,9 +55,10 @@ class AuthService:
             return None
         return token_entry
 
-    def reset_password(self, identifier, new_password):
+    def reset_password(self, token, new_password):
 
-        reset_token_entry = self.auth_repo.get_reset_token_entry(identifier)
+        reset_token_entry = self.auth_repo.get_reset_token_entry(token)
+        print(reset_token_entry)
         if not reset_token_entry:
             return 'Invalid or expired token', 400
 
@@ -75,8 +76,6 @@ class AuthService:
         if isinstance(result, tuple):
             message, status_code = result
             return message, status_code
-
-        self.auth_repo.delete_reset_token_entry(identifier)
         return 'Password has been reset successfully', 200
 
 policies = {
@@ -95,15 +94,14 @@ def policy_required(policy_name):
             def decorated_function(*args, **kwargs):
 
                 user = get_current_user()
-                # print("user", user)
                 if not user:
-                    raise ValueError(401)
+                    return jsonify({"msg": "User not authenticated"}), 401
 
                 policy = policies.get(policy_name)
                 # if not policy or not policy(user):
                 # print(policy_name,"role",user)
                 if user != policy_name:
-                    raise ValueError(403)
+                    return jsonify({"msg": "Does not have the required permissions"}), 403
                 return f(*args, **kwargs)
 
             return decorated_function
