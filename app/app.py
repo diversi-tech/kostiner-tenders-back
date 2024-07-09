@@ -1,12 +1,11 @@
-<<<<<<< HEAD
 from functools import wraps
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, verify_jwt_in_request
 from flask_restx import Api
-
 from authorization_middleware import before_request_middleware
+
 from config import mail
 
 authorizations = {
@@ -40,29 +39,13 @@ api = Api(app, version='1.0', title='Kostiner Tender Records', description='Info
 
 
 from controllers.controller_login import auth_ns
-from controllers.example_controller import nameSpace
-from controllers.user_controller import namespace as nameSpace_user
+from controllers.user_controller import namespace as namespace_user
 
-api.add_namespace(nameSpace,path='/data')
 api.add_namespace(auth_ns, path='/auth')
-api.add_namespace(nameSpace_user, path='/users')
+api.add_namespace(namespace_user, path='/users')
 
 
-# for rule in app.url_map.iter_rules():
-#     print(rule.endpoint, rule)
-=======
-from flask import Flask
-from flask_cors import CORS
-from flask_restx import Api
 
-from controllers.example_controller import nameSpace
-
-app = Flask(__name__)
-CORS(app)
-api = Api(app, version='1.0', title='Kostiner Tender Records', description='Information from the world of auctions')
-
-api.add_namespace(nameSpace)
-
->>>>>>> fab2a8b2527d0c9a0bddc2a0f26c15ef35e2626e
 if __name__ == '__main__':
+    print('in app')
     app.run(debug=True)

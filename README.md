@@ -26,7 +26,20 @@ To work with this project, a virtual environment is required
    ```sh
    pip install -r requirements.txt
    ```
-   
+5. run:
+   ```shell
+   python -m flask run
+   ```
+
+### Dockerfile
+1. Build the Docker image:
+   ```shell
+   docker build -t kostiner .
+   ```
+2. Run the Docker container:
+   ```shell
+   docker run -p 5000:5000 --env-file .env kostiner
+   ```
 <!-- CONTRIBUTING -->
 ## Contributing
 
