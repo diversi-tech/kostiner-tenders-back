@@ -1,8 +1,25 @@
 from dal.user_repo import user_repo
-from services.base_service import base_service
 
-class user_service(base_service):
+class userService:
     def __init__(self):
-        repo = user_repo()
-        print(f'in __init__ in user_service')
-        super().__init__(repo)
+        self.dal = user_repo()
+
+    def get(self):
+        # print("service-get")
+        return self.dal.get()
+
+    def get_by_id(self, user_id):
+        return self.dal.get_by_id(user_id)
+
+    def insert(self, data):
+        # print('post in user_service')
+        return self.dal.insert(data)
+
+    def update(self, user_id, data):
+        # print('userSevice //def def update(self, user_id, data)')
+        return self.dal.update(user_id, data)
+
+    def delete(self, user_id):
+        return self.dal.delete(user_id)
+
+    # Other service methods
