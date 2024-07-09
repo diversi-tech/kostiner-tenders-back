@@ -1,6 +1,7 @@
 # from config import db
 #
 # data_collection = db['<nameCollection>']
+<<<<<<< HEAD
 from config import db
 
 
@@ -32,5 +33,16 @@ class dataDAL:
 
 
 
+=======
+
+class dataDAL:
+    def get_all_datas(self):
+        # return data_collection.find()
+        return  "pass"
+
+
+    def get_data_by_id(self, data_id):
+        pass
+>>>>>>> fab2a8b2527d0c9a0bddc2a0f26c15ef35e2626e
 
     # Other DAL methods

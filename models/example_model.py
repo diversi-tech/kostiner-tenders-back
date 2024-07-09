@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # from flask_restx import Namespace, fields
 #
 # nameSpace = Namespace(name=str('<nameController = data>'),
@@ -25,3 +26,19 @@ data_model = nameSpace.model('Data', {
     'telephone_number': fields.Integer(required=True, description='Value of the data'),
 })
 
+=======
+from flask_restx import Namespace, fields
+
+nameSpace = Namespace(name=str('<nameController = data>'),
+                      description='here write description on namespace = controller',
+                      path='/api/data',
+                      ordered=True
+                      )
+
+data_model = nameSpace.model('data', {
+    'id': fields.Integer(readOnly=True, description='The unique identifier of a data'),
+    'name': fields.String(required=True, description='name of the data'),
+    'description': fields.String(required=True, description='description of data'),
+    'size': fields.String(required=True, description='size of the data'),
+})
+>>>>>>> fab2a8b2527d0c9a0bddc2a0f26c15ef35e2626e

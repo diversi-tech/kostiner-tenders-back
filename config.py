@@ -1,4 +1,5 @@
 from pymongo import MongoClient
+<<<<<<< HEAD
 import certifi
 from flask_mail import Mail
 
@@ -27,3 +28,11 @@ try:
     # print(result)
 except Exception as e:
     print("Error: ", e)
+=======
+
+MONGO_URI = 'mongodb+srv://<userName>:<password>@<cluster>.mongodb.net/'
+
+client = MongoClient(MONGO_URI)
+
+db = client['<nameDB>']
+>>>>>>> fab2a8b2527d0c9a0bddc2a0f26c15ef35e2626e

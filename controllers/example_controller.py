@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_restx import Resource, fields
 
@@ -7,19 +8,30 @@ from models.example_model import nameSpace, data_model
 from models.login_model import  login_model
 
 from flask import Flask, request, jsonify
+=======
+from flask_restx import Resource, fields
+from services.example_service import dataService
+from models.example_model import nameSpace, data_model
+>>>>>>> fab2a8b2527d0c9a0bddc2a0f26c15ef35e2626e
 
 data_service = dataService()
 
 @nameSpace.route('/')
 class dataList(Resource):
+<<<<<<< HEAD
     @nameSpace.doc('list_data',security='jwt')
     @nameSpace.marshal_list_with(login_model)
     @jwt_required()
     @policy_required('user')
+=======
+    @nameSpace.doc('list_data')
+    @nameSpace.marshal_list_with(data_model)
+>>>>>>> fab2a8b2527d0c9a0bddc2a0f26c15ef35e2626e
     def get(self):
         '''here write description of method'''
         return data_service.get_all_datas()
 
+<<<<<<< HEAD
     @nameSpace.doc('create_data',security='jwt')
     @nameSpace.expect(login_model)
     @nameSpace.marshal_with(login_model, code=201)
@@ -69,3 +81,6 @@ class dataDetail(Resource):
         nameSpace.abort(404, f"Data {data_id} doesn't exist")
 
 # Other controllers methods
+=======
+    # Other controllers methods
+>>>>>>> fab2a8b2527d0c9a0bddc2a0f26c15ef35e2626e

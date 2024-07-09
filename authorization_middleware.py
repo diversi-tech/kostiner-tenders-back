@@ -16,5 +16,6 @@ def before_request_middleware():
                 verify_jwt_in_request()
             except Exception as e:
                 print(f"JWT verification error: {str(e)}")
+                print("sara")
                 return jsonify({"msg": "Unauthorized"}), 401
     return middleware
