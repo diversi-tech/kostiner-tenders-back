@@ -1,5 +1,5 @@
 from flask import jsonify, request
-from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
+from flask_jwt_extended import verify_jwt_in_request
 
 
 def before_request_middleware():

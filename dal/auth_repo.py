@@ -1,9 +1,8 @@
 import os
 import jwt
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import generate_password_hash
 from datetime import datetime, timedelta
-from config import db
-import uuid
+from config.config import db
 
 from dal.createDB.connectDB import connect_to_mongodb
 

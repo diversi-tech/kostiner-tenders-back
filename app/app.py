@@ -1,12 +1,10 @@
-from functools import wraps
-
-from flask import Flask, request, jsonify
+from flask import Flask
 from flask_cors import CORS
-from flask_jwt_extended import JWTManager, verify_jwt_in_request
+from flask_jwt_extended import JWTManager
 from flask_restx import Api
-from authorization_middleware import before_request_middleware
+import middlewares.authorization_middleware
 
-from config import mail
+from config.config import mail
 
 authorizations = {
     'jwt': {
@@ -30,7 +28,7 @@ app.config.update(
 app.config['JWT_TOKEN_LOCATION'] = ['headers']
 mail.init_app(app)
 jwt = JWTManager(app)
-app.before_request(before_request_middleware())
+app.before_request(middlewares.authorization_middleware.before_request_middleware())
 
 CORS(app, supports_credentials=True)
 api = Api()
