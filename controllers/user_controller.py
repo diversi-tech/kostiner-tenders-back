@@ -9,7 +9,7 @@ class GetAllUsers(Resource):
     @namespace.marshal_list_with(user_model)
     def get(self):
         '''get all users'''
-        return user_service.get_all()
+        return user_service.get()
 
 @namespace.route('/get-id-user/<string:user_id>')
 @namespace.response(404, 'user not found')
@@ -31,8 +31,7 @@ class PostUser(Resource):
     def post(self):
         '''create a new user'''
         new_user = request.json
-        result = user_service.create(new_user)
-        print(result)
+        result = user_service.insert(new_user)
         return result, 201
 
 
