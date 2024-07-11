@@ -64,7 +64,7 @@ db.sqlite3-journal
 # Flask stuff:
 instance/
 .webassets-cache
-tender.csv
+
 # Scrapy stuff:
 .scrapy
 
@@ -162,3 +162,5 @@ cython_debug/
 #.idea/
 
 Documentation/
+tender.csv
+tender_python.py
