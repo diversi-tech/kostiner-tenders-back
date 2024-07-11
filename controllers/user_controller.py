@@ -1,10 +1,7 @@
 from flask_restx import Resource
 from flask import request
-
-
 from services import user_service
 from models_swagger.user_model import nameSpace_user as namespace, user_model
-
 
 @namespace.route('/get-all-users')
 class GetAllUsers(Resource):

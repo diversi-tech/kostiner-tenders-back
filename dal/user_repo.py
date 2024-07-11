@@ -5,7 +5,6 @@ from dal.base_repo import base_repo
 
 load_dotenv()
 
-
 class user_repo(base_repo):
     def __init__(self):
         super().__init__('Kostiner', 'users')

@@ -8,7 +8,6 @@ from dal.tender_repo import DataAlreadyExistsError
 from services import tender_service
 from models_swagger.tender_model import namespace_tender as namespace, tender_model
 
-
 @namespace.route('/get-all-tenders')
 class GetAllTenders(Resource):
     @namespace.doc('list_tender')
@@ -29,18 +28,15 @@ class GetTenderById(Resource):
             return tender
         namespace.abort(404, f"tender {tender_id} doesn't exist")
 
-
-upload_parser = namespace.parser()
-upload_parser.add_argument('file', location='files', type=FileStorage, required=True, help='CSV or Excel file')
-
-
-@namespace.route('/post/upload')
+@namespace.route('/post-upload-csv')
 class CSVUpload(Resource):
+    upload_parser = namespace.parser()
+    upload_parser.add_argument('file', location='files', type=FileStorage, required=True, help='CSV or Excel file')
     @namespace.expect(upload_parser)
     def post(self):
         if 'file' not in request.files:
             abort(400, "No file part in the request")
-        args = upload_parser.parse_args()
+        args = self.upload_parser.parse_args()
         file = args['file']
         print(f'tender controller args: {args}')
         print(f'tender controller file: {file}')
@@ -82,7 +78,7 @@ class PostTender(Resource):
         print(f'tender controller post result: {result}')
         return result, 201
 
-@namespace.route('/put-tender/<string:tender_id>')
+@namespace.route('/update-tender/<string:tender_id>')
 class PutTenderById(Resource):
     @namespace.doc('update_tender')
     @namespace.expect(tender_model)
@@ -110,8 +106,8 @@ class DeleteTenderById(Resource):
 
 
 namespace.add_resource(GetAllTenders, '/get-all-tenders')
-namespace.add_resource(CSVUpload, '/post/upload')
+namespace.add_resource(CSVUpload, '/post-upload-csv')
 namespace.add_resource(PostTender, '/post-tender')
 namespace.add_resource(GetTenderById, '/get-id-tender/<string:tender_id>')
-namespace.add_resource(PutTenderById, '/put-tender/<string:tender_id>')
+namespace.add_resource(PutTenderById, '/update-tender/<string:tender_id>')
 namespace.add_resource(DeleteTenderById, '/delete-tender/<string:tender_id>')
