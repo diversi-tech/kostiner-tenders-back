@@ -1,14 +1,14 @@
-from bson import ObjectId, json_util
+from bson import json_util
 import json
 
-from flask_restx import Namespace, Resource, fields
-from flask import request, jsonify, make_response
-from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, set_access_cookies
+from flask_restx import Resource
+from flask import request
+from flask_jwt_extended import create_access_token
 
-from config import mail
-from models.login_model import login_model, auth_ns, token_model, reset_password_model, token_verify_model
+from config.config import mail
+from models.login_model import login_model, auth_ns, token_model, reset_password_model
 from services.auth_service import AuthService
-from flask_mail import  Message
+from flask_mail import Message
 
 auth_service = AuthService()
 
