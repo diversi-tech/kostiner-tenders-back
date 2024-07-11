@@ -29,7 +29,6 @@ class AuthRepo:
         print("username",username)
         user = self.user_collection.find_one({'first_name': username})
         print("user",user)
-        print(user['password'])
         if user['password']== password:
         # if user and check_password_hash(user['password'], password):
         #     print("password if", user['password'])

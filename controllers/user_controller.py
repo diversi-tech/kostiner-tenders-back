@@ -34,7 +34,6 @@ class PostUser(Resource):
         '''create a new user'''
         new_user = request.json
         result = user_service.insert(new_user)
-        print(result)
         return result, 201
 
 

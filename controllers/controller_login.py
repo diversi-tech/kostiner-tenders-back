@@ -38,7 +38,6 @@ class Login(Resource):
         username = data.get('username')
         password = data.get('password')
         user_tuple=auth_service.verify_user(username, password)
-        print("user_tuple",user_tuple)
         user_dict = user_tuple[0]
         user_id = str(user_dict['_id'])  # להמיר את ה-ObjectId למחרוזת
         print(f"user_id: {user_id}")

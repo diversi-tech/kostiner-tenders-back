@@ -21,11 +21,8 @@ class user_repo:
 
     def get_by_id(self, user_id):
         try:
-            print(user_id)
             user = user_collection.find_one({'user_id': ObjectId(user_id)})
-            print(user)
             user['user_id'] = str(user['user_id'])
-            print(user['user_id'],str(user['user_id']))
             return user
         except errors.InvalidId as e:
             print(f"Invalid ID: {e}")
