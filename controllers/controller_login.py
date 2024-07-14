@@ -87,6 +87,8 @@ class PasswordResetRequest(Resource):
 
         if not auth_service.user_exists(email):
             return {'message': 'User not found'}, 400
+        if not username:
+            return {'message': 'User not found'}, 400
 
         # Generate a reset token and identifier
         token = auth_service.generate_reset_token(email, username)
