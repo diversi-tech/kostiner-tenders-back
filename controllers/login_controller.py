@@ -1,4 +1,4 @@
-from bson import json_util
+from bson import ObjectId, json_util
 import json
 
 from flask_restx import Resource
@@ -8,7 +8,7 @@ from flask_jwt_extended import create_access_token
 from config.config import mail
 from models.login_model import login_model, auth_ns, token_model, reset_password_model
 from services.auth_service import AuthService
-from flask_mail import Message
+from flask_mail import  Message
 
 auth_service = AuthService()
 
@@ -37,42 +37,18 @@ class Login(Resource):
         data = request.json
         username = data.get('username')
         password = data.get('password')
-        print(password)
-        user_tuple=auth_service.verify_user(username, password)
-        print(user_tuple)
-        user_dict = user_tuple[0]
-        user_id = str(user_dict['_id'])  # להמיר את ה-ObjectId למחרוזת
-        print(f"user_id: {user_id}")
-        if user_dict:
-            userrole = user_dict['role']
+        user,is_valid=auth_service.verify_user(username, password)
+        if is_valid:
+            user_id = str(user['_id'])
+            user_role = user['role']
             additional_claims = {
-                'role': userrole,
+                'role': user_role,
                 'user_id': user_id
             }
-            access_token =create_access_token(identity=userrole, additional_claims=additional_claims)
+            access_token =create_access_token(identity=user_role, additional_claims=additional_claims)
             return {'access_token': 'Bearer ' + access_token}, 200
-        #     print("access_token",access_token)
-        #     serialized_user = serialize_user(user_tuple)
-        #     print("serialized_user1",serialized_user)  # For debugging
-        #
-        #     # Create JSON response data
-        #     response_data = {
-        #         'message': 'Login successful',
-        #         'access_token': 'Bearer ' + access_token,
-        #         'user':serialized_user
-        #     }
-        #     response = make_response(jsonify(response_data))
-        #     response.set_cookie('access_token', access_token,
-        #                         httponly=True,
-        #                         secure=False,
-        #                         samesite='None',
-        #                         domain='localhost',
-        #                         path='/')
-        #     print( response.headers)
-        #     #response.set_cookie('access_token', access_token, httponly=True, secure=True, samesite='Strict')
-        #     return response
-        # else:
-        #      return jsonify({'message': 'Invalid credentials'}), 401
+        else:
+            return jsonify({'message': 'Invalid credentials'}), 401
 
 @auth_ns.route('/reset-password/request')
 class PasswordResetRequest(Resource):
@@ -84,16 +60,10 @@ class PasswordResetRequest(Resource):
         data = request.json
         email = data.get('email')
         username = data.get('username')
-
         if not auth_service.user_exists(email):
             return {'message': 'User not found'}, 400
-        if not username:
-            return {'message': 'User not found'}, 400
-
-        # Generate a reset token and identifier
         token = auth_service.generate_reset_token(email, username)
         reset_link = f"http://localhost:5173/reset-password/?id"  # Use the identifier in the reset link
-
         msg = Message('Password Reset Request', recipients=[email])
         msg.html = f"""
         <html>
