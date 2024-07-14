@@ -24,7 +24,7 @@ class base_repo:
     # @requird_policy('user')
     def get(self):
         try:
-            print('in repo in get method')
+            print(f'in repo in get method {self.collection.find()}')
             return list(self.collection.find())
         except errors.PyMongoError as e:
             print(f"An error occurred: {e}")

@@ -31,7 +31,7 @@ app.config.update(
 app.config['JWT_TOKEN_LOCATION'] = ['headers']
 mail.init_app(app)
 jwt = JWTManager(app)
-app.before_request(middlewares.authorization_middleware.before_request_middleware())
+# app.before_request(middlewares.authorization_middleware.before_request_middleware())
 
 CORS(app, supports_credentials=True)
 api = Api()
