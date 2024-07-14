@@ -1,11 +1,9 @@
 from functools import wraps
-
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, verify_jwt_in_request
 from flask_restx import Api
 from authorization_middleware import before_request_middleware
-
 from config import mail
 
 authorizations = {
@@ -38,7 +36,7 @@ api = Api()
 api = Api(app, version='1.0', title='Kostiner Tender Records', description='Information from the world of auctions', authorizations=authorizations, security='jwt')
 
 
-from controllers.controller_login import auth_ns
+from controllers.login_controller import auth_ns
 from controllers.user_controller import namespace as namespace_user
 
 api.add_namespace(auth_ns, path='/auth')

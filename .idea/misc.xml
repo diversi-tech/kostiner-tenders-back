@@ -3,11 +3,7 @@
   <component name="Black">
     <option name="sdkName" value="Python 3.12 (kostiner-tenders-back) (2)" />
   </component>
-<<<<<<< HEAD
-  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.10 (‏‏תיקיה חדשה)" project-jdk-type="Python SDK" />
-=======
   <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.12 (kostiner-tenders-back) (4)" project-jdk-type="Python SDK" />
->>>>>>> fab2a8b2527d0c9a0bddc2a0f26c15ef35e2626e
   <component name="PyCharmProfessionalAdvertiser">
     <option name="shown" value="true" />
   </component>
