@@ -2,7 +2,7 @@
 # import certifi
 # from flask_mail import Mail
 #
-# mail = Mail()
+#  = Mail()
 # ca = certifi.where()
 # try:
 #

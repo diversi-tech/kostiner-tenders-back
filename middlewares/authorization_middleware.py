@@ -3,7 +3,6 @@ from flask_jwt_extended import verify_jwt_in_request
 
 
 def before_request_middleware():
-
     def middleware():
         excluded_endpoints = {
             'static', 'specs', 'doc', 'root', 'restx_doc.static',
