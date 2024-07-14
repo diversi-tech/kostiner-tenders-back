@@ -1,12 +1,12 @@
 from flask_restx import Resource
 from flask import request
 from services import user_service
-from models_swagger.user_model import nameSpace_user as namespace, user_model
+from models_swagger.user_model import nameSpace_user as namespace, user_data_model
 
 @namespace.route('/get-all-users')
 class GetAllUsers(Resource):
     @namespace.doc('list_user')
-    @namespace.marshal_list_with(user_model)
+    @namespace.marshal_list_with(user_data_model)
     def get(self):
         '''get all users'''
         return user_service.get()
@@ -15,7 +15,7 @@ class GetAllUsers(Resource):
 @namespace.response(404, 'user not found')
 class GetUserById(Resource):
     @namespace.doc('get_user')
-    @namespace.marshal_with(user_model)
+    @namespace.marshal_with(user_data_model)
     def get(self, user_id):
         '''get user by Id'''
         user = user_service.get_by_id(user_id)
@@ -26,8 +26,8 @@ class GetUserById(Resource):
 @namespace.route('/post-user')
 class PostUser(Resource):
     @namespace.doc('create_user')
-    @namespace.expect(user_model)
-    @namespace.marshal_with(user_model)
+    @namespace.expect(user_data_model)
+    @namespace.marshal_with(user_data_model)
     def post(self):
         '''create a new user'''
         new_user = request.json
@@ -38,8 +38,8 @@ class PostUser(Resource):
 @namespace.route('/put-user/<string:user_id>')
 class PutUserById(Resource):
     @namespace.doc('update_user')
-    @namespace.expect(user_model)
-    @namespace.marshal_with(user_model)
+    @namespace.expect(user_data_model)
+    @namespace.marshal_with(user_data_model)
     def put(self, user_id):
         '''update user by id'''
         update_user = request.json

@@ -2,7 +2,7 @@ from flask_restx import Namespace, fields
 
 nameSpace_user = Namespace(name=str('user'),
                            description='users',
-                           path='/api',
+                           path='/api/user',
                            ordered=True
                            )
 

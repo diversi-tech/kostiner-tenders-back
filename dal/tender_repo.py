@@ -18,7 +18,7 @@ class tender_repo(base_repo):
         try:
             for item in data:
                 print(f'tender repo item: {item}')
-                print(f'tender repo item: {item['tender_number']}')
+                print(f'tender repo item: {item["tender_number"] }')
                 if not self.collection.find_one({'tender_number': item['tender_number']}):
                     print(f'tender repo  if not self.collection.find_one')
                     result.append(item)
