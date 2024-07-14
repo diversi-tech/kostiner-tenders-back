@@ -32,9 +32,9 @@
 #     # print(result)
 # except Exception as e:
 #     print("Error: ", e)
-from pymongo import MongoClient
 import certifi
 from flask_mail import Mail
+from pymongo import MongoClient
 
 mail = Mail()
 ca = certifi.where()

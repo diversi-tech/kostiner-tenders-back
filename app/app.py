@@ -3,11 +3,8 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, verify_jwt_in_request
 from flask_restx import Api
-from authorization_middleware import before_request_middleware
 
-from config import mail
-import middlewares.authorization_middleware
-from controllers.controller_login import auth_ns
+from controllers.login_controller import auth_ns
 from controllers.user_controller import namespace as namespace_user
 from controllers.tender_controller import namespace as namespace_tender
 from config.config import mail
