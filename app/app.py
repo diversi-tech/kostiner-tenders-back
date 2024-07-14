@@ -3,7 +3,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, verify_jwt_in_request
 from flask_restx import Api
-
+from middlewares.authorization_middleware import before_request_middleware
 from controllers.login_controller import auth_ns
 from controllers.user_controller import namespace as namespace_user
 from controllers.tender_controller import namespace as namespace_tender
