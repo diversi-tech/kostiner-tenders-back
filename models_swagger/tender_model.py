@@ -12,7 +12,7 @@ tender_model = namespace_tender.model('Tender', {
     'body_name': fields.String(required=True, description='body_names'),
     'tender_number': fields.String(required=True, description='tender_number'),
     'tender_name': fields.String(required=True, description='tender_name'),
-    'published_date':fields.Date(required=True, description='published_date'),
+    'published_date': fields.Date(required=True, description='published_date'),
     'submission_date': fields.Date(required=True, description='submission_date'),
     "category": fields.String(required=True, description='category'),
     'winner_name': fields.String(required=True, description='winner_name'),

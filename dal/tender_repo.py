@@ -1,4 +1,5 @@
 from bson import ObjectId
+from pymongo import errors
 
 from dal.base_repo import base_repo
 
@@ -11,7 +12,13 @@ class tender_repo(base_repo):
         return 'tender_id'
     def get_name_string(self):
             return 'tender_name'
-
+    def get(self, query):
+        try:
+            print(f'in tender repo in get method self.collection.find(query)')
+            return list(self.collection.find(query))
+        except errors.PyMongoError as e:
+            print(f"An error occurred: {e}")
+            return []
     def insert_csv(self, data):
         print(f'in tender_repo insert: len(data):{len(data)}')
         result = []
