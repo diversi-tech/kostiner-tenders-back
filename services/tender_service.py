@@ -14,6 +14,9 @@ class tender_service(base_service):
         super().__init__(self.repo)
         print('in __init__ in tender_service')
 
+    def get_all(self, query):
+        return self.repo.get(query)
+
     def insert_from_csv(self, file):
         return self._insert_from_file(file, 'csv')
 

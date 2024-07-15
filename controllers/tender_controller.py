@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from flask_restx import Resource, abort
 from flask import request
 from pymongo.results import InsertManyResult, InsertOneResult
@@ -10,11 +12,28 @@ from models_swagger.tender_model import namespace_tender as namespace, tender_mo
 
 @namespace.route('/get-all-tenders')
 class GetAllTenders(Resource):
-    @namespace.doc('list_tender')
+    @namespace.doc(params={
+        'start': 'Start publication date (format: DD/MM/YYYY)',
+        'end': 'End publication date (format: DD/MM/YYYY)'
+    })
     @namespace.marshal_list_with(tender_model)
     def get(self):
         '''get all tenders'''
-        return tender_service.get_all()
+        start = request.args.get('start')
+        end = request.args.get('end')
+        print(f'tender controller start: {start} end: {end}')
+
+        date_query = {}
+
+        if start:
+            start_date = datetime.strptime(start, '%d/%m/%Y')
+            date_query['$gte'] = start_date
+        if end:
+            end_date = datetime.strptime(end, '%d/%m/%Y')
+            date_query['$lte'] = end_date
+
+        query = {'published_date': date_query} if date_query else {}
+        return tender_service.get_all(query)
 
 @namespace.route('/get-id-tender/<string:tender_id>')
 @namespace.response(404, 'tender not found')
