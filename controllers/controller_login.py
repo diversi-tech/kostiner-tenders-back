@@ -2,7 +2,7 @@ from bson import json_util
 import json
 
 from flask_restx import Resource
-from flask import request
+from flask import request, jsonify
 from flask_jwt_extended import create_access_token
 
 from config.config import mail
@@ -38,17 +38,21 @@ class Login(Resource):
         username = data.get('username')
         password = data.get('password')
         user_tuple=auth_service.verify_user(username, password)
-        user_dict = user_tuple[0]
-        user_id = str(user_dict['_id'])  # להמיר את ה-ObjectId למחרוזת
-        print(f"user_id: {user_id}")
-        if user_dict:
-            userrole = user_dict['role']
-            additional_claims = {
-                'role': userrole,
-                'user_id': user_id
-            }
-            access_token =create_access_token(identity=userrole, additional_claims=additional_claims)
-            return {'access_token': 'Bearer ' + access_token}, 200
+
+        if user_tuple:
+            user_dict = user_tuple[0]
+            user_id = str(user_dict['_id'])  # להמיר את ה-ObjectId למחרוזת
+            print(f"user_id: {user_id}")
+            if user_dict:
+                userrole = user_dict['role']
+                additional_claims = {
+                    'role': userrole,
+                    'user_id': user_id
+                }
+                access_token =create_access_token(identity=userrole, additional_claims=additional_claims)
+                return {'access_token': 'Bearer ' + access_token}, 200
+        else:
+            return {'message': 'Invalid credentials'}, 401
         #     print("access_token",access_token)
         #     serialized_user = serialize_user(user_tuple)
         #     print("serialized_user1",serialized_user)  # For debugging
