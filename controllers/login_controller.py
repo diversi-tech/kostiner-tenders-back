@@ -1,4 +1,4 @@
-from bson import json_util
+from bson import ObjectId, json_util
 import json
 
 from flask_restx import Resource
@@ -86,16 +86,10 @@ class PasswordResetRequest(Resource):
         data = request.json
         email = data.get('email')
         username = data.get('username')
-
         if not auth_service.user_exists(email):
             return {'message': 'User not found'}, 400
-        if not username:
-            return {'message': 'User not found'}, 400
-
-        # Generate a reset token and identifier
         token = auth_service.generate_reset_token(email, username)
         reset_link = f"http://localhost:5173/reset-password/?id"  # Use the identifier in the reset link
-
         msg = Message('Password Reset Request', recipients=[email])
         msg.html = f"""
         <html>
@@ -136,30 +130,28 @@ class PasswordResetRequest(Resource):
 
 @auth_ns.route('/reset-password/response', methods=['OPTIONS','POST'])
 class PasswordResetResponse(Resource):
-    # @auth_ns.expect(token_model)
-    # @auth_ns.response(200, 'Password reset successful')
-    # @auth_ns.response(200, 'Password reset email sent successfully')
-    # @auth_ns.response(400, 'Invalid or expired reset token')
-    # @auth_ns.expect(token_model)
-    # @auth_ns.response(200, 'Password reset successful')
-    # @auth_ns.response(400, 'Invalid or expired token')
-    # @auth_ns.response(401, 'Token has expired')
-    # @auth_ns.response(404, 'User not found')
-    # @auth_ns.response(500, 'Unknown error')
-    # def options(self):
-    #     """
-    #     מתודת OPTIONS - מאפשרת בקשות CORS.
-    #     """
-    #     return {'Allow': 'POST, OPTIONS'}, 200, {
-    #
-    #         'Access-Control-Allow-Origin': 'http://localhost:5173',
-    #         'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    #         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    #         'Access-Control-Allow-Credentials': 'true'
-    #
-    #     }
+    @auth_ns.expect(token_model)
+    @auth_ns.response(200, 'Password reset successful')
+    @auth_ns.response(200, 'Password reset email sent successfully')
+    @auth_ns.response(400, 'Invalid or expired reset token')
+    @auth_ns.expect(token_model)
+    @auth_ns.response(200, 'Password reset successful')
+    @auth_ns.response(400, 'Invalid or expired token')
+    @auth_ns.response(401, 'Token has expired')
+    @auth_ns.response(404, 'User not found')
+    @auth_ns.response(500, 'Unknown error')
+    def options(self):
+        """
+        מתודת OPTIONS - מאפשרת בקשות CORS.
+        """
+        return {'Allow': 'POST, OPTIONS'}, 200, {
+            'Access-Control-Allow-Origin': 'http://localhost:5173',
+            'Access-Control-Allow-Methods': 'POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+            'Access-Control-Allow-Credentials': 'true'
+        }
 
-    # @auth_ns.expect(token_model)
+    @auth_ns.expect(token_model)
     @auth_ns.response(200, 'Password reset successful')
     @auth_ns.response(400, 'Invalid token')
     @auth_ns.response(401, 'Token expired')

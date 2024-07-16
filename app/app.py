@@ -1,15 +1,13 @@
-from flask import Flask
+from flask import Flask, request, jsonify
 from flask_cors import CORS
-from flask_jwt_extended import JWTManager
+from flask_jwt_extended import JWTManager, verify_jwt_in_request
 from flask_restx import Api
-import middlewares.authorization_middleware
-from controllers.controller_login import auth_ns
+from middlewares.authorization_middleware import before_request_middleware
+from controllers.login_controller import auth_ns
 from controllers.user_controller import namespace as namespace_user
 from controllers.tender_controller import namespace as namespace_tender
 from config.config import mail
 
-# sys.path.append(os.path.join(os.path.dirname(__file__), '../middlewares/authorization_middleware.py'))
-# from middlewares.authorization_middleware import before_request_middleware
 authorizations = {
     'jwt': {
         'type': 'apiKey',
@@ -32,7 +30,7 @@ app.config.update(
 app.config['JWT_TOKEN_LOCATION'] = ['headers']
 mail.init_app(app)
 jwt = JWTManager(app)
-app.before_request(middlewares.authorization_middleware.before_request_middleware())
+app.before_request(before_request_middleware())
 
 CORS(app, supports_credentials=True)
 api = Api()

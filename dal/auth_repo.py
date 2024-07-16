@@ -26,14 +26,14 @@ class AuthRepo:
 
     def verify_user(self, username, password):
         print("username",username)
-        user = self.user_collection.find_one({'first_name': username})
+        user = self.user_collection.find_one({'user_name': username})
         print("user",user)
         if user and user['password']== password:
         # if user and check_password_hash(user['password'], password):
         #     print("password if", user['password'])
             return user, True
 
-        return False
+        return None,False
 
 
     def find_user_by_email(self, email):
