@@ -59,6 +59,7 @@ class AuthRepo:
         user = self.user_collection.find_one({'$and': [{'email': email}, {'user_name': username}, {'role': role}]})
         if not user:
             return 'User not found', 400
+
         # עדכון הסיסמה למשתמש המתאים
         query = {'$and': [{'user_name': username}, {'email': email}]}
         update = {'$set': {'password': new_password}}

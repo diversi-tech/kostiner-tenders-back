@@ -2,13 +2,13 @@ from bson import ObjectId, json_util
 import json
 
 from flask_restx import Resource
-from flask import request
+from flask import request, jsonify
 from flask_jwt_extended import create_access_token
 
 from config.config import mail
 from models.login_model import login_model, auth_ns, token_model, reset_password_model
 from services.auth_service import AuthService
-from flask_mail import  Message
+from flask_mail import Message
 
 auth_service = AuthService()
 
