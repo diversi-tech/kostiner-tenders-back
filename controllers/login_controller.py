@@ -39,7 +39,7 @@ class Login(Resource):
         password = data.get('password')
         user,is_valid=auth_service.verify_user(username, password)
         if is_valid:
-            user_id = str(user['_id'])
+            user_id = str(user['user_id'])
             user_role = user['role']
             additional_claims = {
                 'role': user_role,
@@ -114,7 +114,7 @@ class PasswordResetResponse(Resource):
     @auth_ns.response(401, 'Token has expired')
     @auth_ns.response(404, 'User not found')
     @auth_ns.response(500, 'Unknown error')
-    def options(self):
+    def options(self,user_id):
         """
         מתודת OPTIONS - מאפשרת בקשות CORS.
         """
