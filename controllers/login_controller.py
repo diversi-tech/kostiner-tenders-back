@@ -10,10 +10,7 @@ from flask_jwt_extended import create_access_token
 from config.config import mail
 from models.login_model import login_model, auth_ns, token_model, reset_password_model
 from services.auth_service import AuthService
-from flask_mail import  Message
-
-# from google.oauth2 import id_token
-# from google.auth.transport import requests
+from flask_mail import Message
 
 auth_service = AuthService()
 
@@ -43,15 +40,15 @@ class Login(Resource):
         data = request.json
         username = data.get('username')
         password = data.get('password')
-        user,is_valid=auth_service.verify_user(username, password)
+        user, is_valid = auth_service.verify_user(username, password)
         if is_valid:
-            user_id = str(user['_id'])
+            user_id = str(user['user_id'])
             user_role = user['role']
             additional_claims = {
                 'role': user_role,
                 'user_id': user_id
             }
-            access_token =create_access_token(identity=user_role, additional_claims=additional_claims)
+            access_token = create_access_token(identity=user_role, additional_claims=additional_claims)
             return {'access_token': 'Bearer ' + access_token}, 200
         else:
             return jsonify({'message': 'Invalid credentials'}), 401
