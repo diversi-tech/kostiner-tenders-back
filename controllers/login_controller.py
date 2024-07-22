@@ -43,46 +43,18 @@ class Login(Resource):
         data = request.json
         username = data.get('username')
         password = data.get('password')
-        user_tuple = auth_service.verify_user(username, password)
-
-        if user_tuple:
-            user_dict = user_tuple[0]
-            if user_dict:
-                print(f"user_dict{user_dict}")
-                user_id = str(user_dict['_id'])  # להמיר את ה-ObjectId למחרוזת
-                print(f"user_id: {user_id}")
-                # if user_dict:
-                userrole = user_dict['role']
-                additional_claims = {
-                    'role': userrole,
-                    'user_id': user_id
-                }
-                access_token = create_access_token(identity=userrole, additional_claims=additional_claims)
-                return {'access_token': 'Bearer ' + access_token}, 200
-
-        return {'message': 'Invalid credentials'}, 401
-        #     print("access_token",access_token)
-        #     serialized_user = serialize_user(user_tuple)
-        #     print("serialized_user1",serialized_user)  # For debugging
-        #
-        #     # Create JSON response data
-        #     response_data = {
-        #         'message': 'Login successful',
-        #         'access_token': 'Bearer ' + access_token,
-        #         'user':serialized_user
-        #     }
-        #     response = make_response(jsonify(response_data))
-        #     response.set_cookie('access_token', access_token,
-        #                         httponly=True,
-        #                         secure=False,
-        #                         samesite='None',
-        #                         domain='localhost',
-        #                         path='/')
-        #     print( response.headers)
-        #     #response.set_cookie('access_token', access_token, httponly=True, secure=True, samesite='Strict')
-        #     return response
-        # else:
-        #      return jsonify({'message': 'Invalid credentials'}), 401
+        user,is_valid=auth_service.verify_user(username, password)
+        if is_valid:
+            user_id = str(user['user_id'])
+            user_role = user['role']
+            additional_claims = {
+                'role': user_role,
+                'user_id': user_id
+            }
+            access_token =create_access_token(identity=user_role, additional_claims=additional_claims)
+            return {'access_token': 'Bearer ' + access_token}, 200
+        else:
+            return jsonify({'message': 'Invalid credentials'}), 401
 
 
 @auth_ns.route('/continue-with-google')
@@ -191,7 +163,7 @@ class PasswordResetResponse(Resource):
     @auth_ns.response(401, 'Token has expired')
     @auth_ns.response(404, 'User not found')
     @auth_ns.response(500, 'Unknown error')
-    def options(self):
+    def options(self,user_id):
         """
         מתודת OPTIONS - מאפשרת בקשות CORS.
         """

@@ -34,13 +34,11 @@ class AuthRepo:
     def verify_user(self, username, password):
         print("username", username)
         user = self.user_collection.find_one({'user_name': username})
-        print("user", user)
-        if user and user['password'] == password:
-            # if user and check_password_hash(user['password'], password):
-            #     print("password if", user['password'])
+        print("user",user)
+        if user['password']== password:
             return user, True
 
-        return None, False
+        return None,False
 
     def find_user_by_email(self, email):
         user = self.user_collection.find_one({'email': email})
@@ -54,9 +52,6 @@ class AuthRepo:
     def get_reset_token_entry(self, token):
         try:
             payload = jwt.decode(token, os.getenv('JWT_SECRET_KEY'), algorithms=['HS256'])
-            username = payload['username']
-            email = payload['email']
-            role = payload['role']
             return payload
         except jwt.ExpiredSignatureError:
             return None, None
@@ -90,12 +85,12 @@ class AuthRepo:
 
     def reset_password(self, email, role, new_password, username):
         # חיפוש המשתמש לפי האימייל והשם משתמש
-        user = self.user_collection.find_one({'$and': [{'email': email}, {'username': username}, {'role': role}]})
+        user = self.user_collection.find_one({'$and': [{'email': email}, {'user_name': username}, {'role': role}]})
         if not user:
             return 'User not found', 400
 
         # עדכון הסיסמה למשתמש המתאים
-        query = {'$and': [{'username': username}, {'email': email}]}
+        query = {'$and': [{'user_name': username}, {'email': email}]}
         update = {'$set': {'password': new_password}}
         self.user_collection.update_one(query, update)
 
