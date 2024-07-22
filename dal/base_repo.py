@@ -24,16 +24,21 @@ class base_repo:
     # @requird_policy('user')
     def get(self):
         try:
-            print(f'in repo in get method {self.collection.find()}')
+            print(f'base_repo get')
             return list(self.collection.find())
         except errors.PyMongoError as e:
             print(f"An error occurred: {e}")
             return []
 
     def get_by_id(self, object_id):
+        print(f'base repo get_by_id object_id: {object_id}')
         try:
             obj_id = self.get_obj_id()
-            return self.collection.find_one({obj_id: ObjectId(object_id)})
+            print(f'base repo get_by_id obj_id: {obj_id}, collection: {self.collection.name}')
+            result = self.collection.find_one({obj_id: ObjectId(object_id)})
+            print(f'base repo get_by_id result: {result}')
+            return result
+
         except errors.InvalidId as e:
             print(f"Invalid ID: {e}")
             return None
@@ -41,13 +46,9 @@ class base_repo:
             print(f"An error occurred: {e}")
             return None
 
-    def get_by_string(self, object_id):
+    def get_by_string(self, query):
         try:
-            search = self.get_name_string()
-            return self.collection.find_one({search: object_id})
-        except errors.InvalidId as e:
-            print(f"Invalid ID: {e}")
-            return None
+            return self.collection.find_one(query)
         except errors.PyMongoError as e:
             print(f"An error occurred: {e}")
             return None

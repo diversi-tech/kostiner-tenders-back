@@ -79,9 +79,9 @@ class AuthService:
         return 'Password has been reset successfully', 200
 
 policies = {
-        "AdminPolicy": lambda user: user.get("role") == "admin",
-        "ClientPolicy": lambda user: user.get("role") == "client",
-        "UserPolicy": lambda user: user.get("role") == "user"
+        "AdminPolicy": lambda user: user.get() == "admin",
+        "ClientPolicy": lambda user: user.get() == "client",
+        "UserPolicy": lambda user: user.get() == "user"
     }
 
 def get_current_user():

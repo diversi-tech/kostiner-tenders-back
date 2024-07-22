@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from bson import ObjectId
 from pymongo import errors
 
@@ -19,15 +21,35 @@ class tender_repo(base_repo):
         except errors.PyMongoError as e:
             print(f"An error occurred: {e}")
             return []
+
+    def get_by_category(self, category, search_date, start_date, end_date):
+        print(f'tender_repo get_by_category category: {category}')
+        query = {
+            '$and': [
+                {'category': category},
+                {'published_date': {'$gte': start_date}},
+                {'published_date': {'$lte': end_date}}
+            ]
+        }
+        if search_date > start_date:
+            query['$and'].append({'published_date': {'$lte': search_date}})
+            print(query['$and'][3])
+        list_category = (self.collection
+                         .find(query)
+                         .sort('published_date', -1)
+                         .limit(100))
+        result_list = list(list_category)
+        return result_list
+
     def insert_csv(self, data):
-        print(f'in tender_repo insert: len(data):{len(data)}')
+        print(f'tender_repo insert: len(data):{len(data)}')
         result = []
         try:
             for item in data:
                 print(f'tender repo item: {item}')
-                print(f'tender repo item: {item["tender_number"] }')
-                if not self.collection.find_one({'tender_number': item['tender_number']}):
-                    print(f'tender repo  if not self.collection.find_one')
+                print(f'tender repo item: {item["tender_number_name"]}')
+                if not self.collection.find_one({'tender_number_name': item['tender_number_name']}):
+                    print(f'tender repo if not self.collection.find_one')
                     result.append(item)
             if not result:
                 print(f'if not exist new object {result}')

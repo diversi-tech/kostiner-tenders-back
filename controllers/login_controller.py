@@ -8,9 +8,10 @@ from flask_jwt_extended import create_access_token
 from config.config import mail
 from models.login_model import login_model, auth_ns, token_model, reset_password_model
 from services.auth_service import AuthService
-from flask_mail import  Message
+from flask_mail import Message
 
 auth_service = AuthService()
+
 
 def serialize_user(user):
     """Convert ObjectId instances in a user dictionary to strings."""
@@ -37,18 +38,19 @@ class Login(Resource):
         data = request.json
         username = data.get('username')
         password = data.get('password')
-        user,is_valid=auth_service.verify_user(username, password)
+        user, is_valid = auth_service.verify_user(username, password)
         if is_valid:
-            user_id = str(user['_id'])
+            user_id = str(user['user_id'])
             user_role = user['role']
             additional_claims = {
                 'role': user_role,
                 'user_id': user_id
             }
-            access_token =create_access_token(identity=user_role, additional_claims=additional_claims)
+            access_token = create_access_token(identity=user_role, additional_claims=additional_claims)
             return {'access_token': 'Bearer ' + access_token}, 200
         else:
             return jsonify({'message': 'Invalid credentials'}), 401
+
 
 @auth_ns.route('/reset-password/request')
 class PasswordResetRequest(Resource):
@@ -86,6 +88,7 @@ class PasswordResetRequest(Resource):
 
         return token
 
+
 # @auth_ns.route('/reset-password/verify')
 # class PasswordResetVerify(Resource):
 #     @auth_ns.expect(token_verify_model)
@@ -102,7 +105,7 @@ class PasswordResetRequest(Resource):
 #
 #         return {'message': 'Token verified', 'email': reset_token_entry['email'], 'username': reset_token_entry['username']}, 200
 
-@auth_ns.route('/reset-password/response', methods=['OPTIONS','POST'])
+@auth_ns.route('/reset-password/response', methods=['OPTIONS', 'POST'])
 class PasswordResetResponse(Resource):
     @auth_ns.expect(token_model)
     @auth_ns.response(200, 'Password reset successful')
@@ -133,12 +136,10 @@ class PasswordResetResponse(Resource):
     def post(self):
         data = request.json
         token = data.get('token')  # קבלת ה-UUID מהבקשה
-        new_password=data.get('new_password')
+        new_password = data.get('new_password')
         result = auth_service.reset_password(token, new_password)
         if isinstance(result, tuple):
             message, status_code = result
             return {'message': message}, status_code
 
         return {'message': 'Unknown error occurred'}, 500
-
-

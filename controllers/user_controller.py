@@ -1,16 +1,21 @@
+from flask_jwt_extended import jwt_required
 from flask_restx import Resource
 from flask import request
+
 from services import user_service
 from models_swagger.user_model import nameSpace_user as namespace, user_data_model
 
+
 @namespace.route('/get-all-users')
 class GetAllUsers(Resource):
+    @jwt_required()
     @namespace.doc('list_user')
     @namespace.marshal_list_with(user_data_model)
     def get(self):
         '''get all users'''
         print(f'user controller get')
         return user_service.get_all()
+
 
 @namespace.route('/get-id-user/<string:user_id>')
 @namespace.response(404, 'user not found')
@@ -24,6 +29,7 @@ class GetUserById(Resource):
             return user
         namespace.abort(404, f"user {user_id} doesn't exist")
 
+
 @namespace.route('/post-user')
 class PostUser(Resource):
     @namespace.doc('create_user')
@@ -32,6 +38,7 @@ class PostUser(Resource):
     def post(self):
         '''create a new user'''
         new_user = request.json
+        print(f'user controller new_user: {new_user}')
         result = user_service.create(new_user)
         return result, 201
 
@@ -50,6 +57,7 @@ class PutUserById(Resource):
             return updated_user
         namespace.abort(404, f"user {user_id} doesn't exist")
 
+
 @namespace.route('/delete-user/<string:user_id>')
 class DeleteUserById(Resource):
     @namespace.doc('delete_user')
@@ -59,6 +67,7 @@ class DeleteUserById(Resource):
         if count_delete is not None and count_delete > 0:
             return 'The user deleted successfully'
         namespace.abort(404, f"user {user_id} doesn't exist")
+
 
 namespace.add_resource(GetAllUsers, '/get-all-users')
 namespace.add_resource(PostUser, '/post-user')

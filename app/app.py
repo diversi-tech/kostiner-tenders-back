@@ -17,8 +17,8 @@ authorizations = {
 }
 
 app = Flask(__name__)
-app.config['JWT_SECRET_KEY'] = 'chgc#sd1'  # Change to your actual secret key
 
+app.config['JWT_SECRET_KEY'] = 'chgc#sd1'  # Change to your actual secret key
 app.config.update(
     MAIL_SERVER='smtp.gmail.com', # שדרג לשימוש בשרת האימייל שלך
     MAIL_PORT=587,
@@ -28,21 +28,16 @@ app.config.update(
     MAIL_DEFAULT_SENDER= 'kustiner1@gmail.com'
 )
 app.config['JWT_TOKEN_LOCATION'] = ['headers']
+
 mail.init_app(app)
 jwt = JWTManager(app)
 app.before_request(before_request_middleware())
 
 CORS(app, supports_credentials=True)
-api = Api()
-
 api = Api(app, version='1.0', title='Kostiner Tender Records', description='Information from the world of auctions', authorizations=authorizations, security='jwt')
-
 api.add_namespace(namespace_user)
 api.add_namespace(namespace_tender)
 api.add_namespace(auth_ns, path='/auth')
-api.add_namespace(namespace_user, path='/users')
-
-
 
 if __name__ == '__main__':
     print('in app')
