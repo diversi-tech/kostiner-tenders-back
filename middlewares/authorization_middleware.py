@@ -25,7 +25,7 @@ def before_request_middleware():
     def middleware():
         excluded_endpoints = {
             'static', 'specs', 'doc', 'root', 'restx_doc.static',
-            'auth_login', 'auth_password_reset_request', 'auth_password_reset_response',
+            'auth_login', 'auth_password_reset_request', 'auth_password_reset_response','auth_google',
             'password_reset_request', 'password_reset_response', 'user_post_user',
             # יש לבטל אפשרות זו בפרודקשיין ->
             'user_get_all_users'

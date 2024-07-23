@@ -1,6 +1,8 @@
+import jwt
+import requests
 from bson import ObjectId, json_util
 import json
-
+import os
 from flask_restx import Resource
 from flask import request, jsonify
 from flask_jwt_extended import create_access_token
@@ -10,7 +12,11 @@ from models.login_model import login_model, auth_ns, token_model, reset_password
 from services.auth_service import AuthService
 from flask_mail import Message
 
+# from google.oauth2 import id_token
+# from google.auth.transport import requests
+
 auth_service = AuthService()
+
 
 def serialize_user(user):
     """Convert ObjectId instances in a user dictionary to strings."""
@@ -50,6 +56,48 @@ class Login(Resource):
         else:
             return jsonify({'message': 'Invalid credentials'}), 401
 
+
+@auth_ns.route('/continue-with-google')
+class Google(Resource):
+    @auth_ns.response(200, 'Success', token_model)
+    @auth_ns.response(400, 'failed')
+    def post(self):
+        data = request.json
+        token = data['token']
+
+        # אימות אסימון ההתחברות של גוגל
+        response = requests.get(
+            f'https://oauth2.googleapis.com/tokeninfo?id_token={token}')
+        print(response)
+        if response.status_code != 200:
+            return {'error': 'Failed to fetch user profile', 'status_code': response.status_code}, 400
+
+        profile_info = response.json()
+        print(f'response.json() = {response.json()}')
+        email = profile_info['email']
+        name = profile_info['name']
+        user = auth_service.find_user_by_email(email)
+
+        if user is not None:
+            additional_claims = {
+                'role': user['role'],
+                'user_id': serialize_user(user)['_id']
+            }
+            access_token = create_access_token(identity=user['role'], additional_claims=additional_claims)
+            return {'access_token': 'Bearer ' + access_token}, 200
+
+        # הוספת המשתמש למסד הנתונים
+        user = auth_service.create_user(name, email)
+        print(f'user = {user}')
+        additional_claims = {
+            'role': 'client',  # need a function to know if role is admin or client---!
+            'user_id': serialize_user(user)['_id']
+        }
+
+        access_token = create_access_token(identity="client", additional_claims=additional_claims)
+        return {'access_token': 'Bearer ' + access_token}, 200
+
+
 @auth_ns.route('/reset-password/request')
 class PasswordResetRequest(Resource):
     @auth_ns.expect(reset_password_model)
@@ -86,6 +134,7 @@ class PasswordResetRequest(Resource):
 
         return token
 
+
 # @auth_ns.route('/reset-password/verify')
 # class PasswordResetVerify(Resource):
 #     @auth_ns.expect(token_verify_model)
@@ -102,7 +151,7 @@ class PasswordResetRequest(Resource):
 #
 #         return {'message': 'Token verified', 'email': reset_token_entry['email'], 'username': reset_token_entry['username']}, 200
 
-@auth_ns.route('/reset-password/response', methods=['OPTIONS','POST'])
+@auth_ns.route('/reset-password/response', methods=['OPTIONS', 'POST'])
 class PasswordResetResponse(Resource):
     @auth_ns.expect(token_model)
     @auth_ns.response(200, 'Password reset successful')
@@ -133,12 +182,10 @@ class PasswordResetResponse(Resource):
     def post(self):
         data = request.json
         token = data.get('token')  # קבלת ה-UUID מהבקשה
-        new_password=data.get('new_password')
+        new_password = data.get('new_password')
         result = auth_service.reset_password(token, new_password)
         if isinstance(result, tuple):
             message, status_code = result
             return {'message': message}, status_code
 
         return {'message': 'Unknown error occurred'}, 500
-
-
