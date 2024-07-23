@@ -20,7 +20,8 @@ class AuthService:
 
         return self.auth_repo.verify_user(username, password)
 
-
+    def decode_google_jwt(self, token):
+        return self.auth_repo.decode_google_jwt(token)
 
     def find_user_by_email(self, email):
         return self.auth_repo.find_user_by_email(email)

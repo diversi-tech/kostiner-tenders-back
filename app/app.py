@@ -6,6 +6,7 @@ from middlewares.authorization_middleware import before_request_middleware
 from controllers.login_controller import auth_ns
 from controllers.user_controller import namespace as namespace_user
 from controllers.tender_controller import namespace as namespace_tender
+from controllers.product_controller import namespace as namespace_product
 from config.config import mail
 
 authorizations = {
@@ -41,6 +42,7 @@ api.add_namespace(namespace_user)
 api.add_namespace(namespace_tender)
 api.add_namespace(auth_ns, path='/auth')
 api.add_namespace(namespace_user, path='/users')
+api.add_namespace(namespace_product)
 
 
 
