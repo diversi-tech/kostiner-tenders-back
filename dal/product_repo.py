@@ -1,8 +1,5 @@
-from idlelib.iomenu import errors
-from os import abort
 from pymongo import errors
 from flask import abort
-
 
 from dal.base_repo import base_repo
 
@@ -10,7 +7,6 @@ class product_repo(base_repo):
     def __init__(self):
         super().__init__('Kostiner','products')
         print('in __init__ in base_repo')
-    # def get_obj_id(self):
 
     def get_by_category(self, category):
         try:
@@ -18,12 +14,10 @@ class product_repo(base_repo):
                 print("Collection is null.")
                 return False
 
-                # בדיקה אם ה-collection ריק
             if self.collection.count_documents({}) == 0:
                 print("Collection is empty.")
                 return False
 
-            # בדיקה אם הקטגוריה קיימת לפני המחיקה
             existing_category = self.collection.find_one({"category": category})
             if not existing_category:
                 print(f"Category '{category}' not found.")
@@ -39,7 +33,6 @@ class product_repo(base_repo):
                 print("Collection is null.")
                 return False
 
-                # בדיקה אם ה-collection ריק
             if self.collection.count_documents({}) == 0:
                 print("Collection is empty.")
                 return False
@@ -72,26 +65,21 @@ class product_repo(base_repo):
 
     def delete_by_category(self, category):
         try:
-            # בדיקה אם ה-collection ריק
             if self.collection is None:
                 print("Collection is null.")
                 return False
 
-                # בדיקה אם ה-collection ריק
             if self.collection.count_documents({}) == 0:
                 print("Collection is empty.")
                 return False
 
-            # בדיקה אם הקטגוריה קיימת לפני המחיקה
             existing_category = self.collection.find_one({"category": category})
             if not existing_category:
                 print(f"Category '{category}' not found.")
                 return False
 
-            # מחיקת המסמך לפי הקטגוריה
             result = self.collection.delete_one({"category": category})
 
-            # אם נמחק מסמך, result.deleted_count יהיה שווה ל-1
             if result.deleted_count == 1:
                 return True
             else:
@@ -109,10 +97,7 @@ class product_repo(base_repo):
             if self.collection is not None and self.collection.count_documents({}) != 0:
                 if self.collection.find_one({"category": data["category"]}):
                     abort(400, "Product with this category already exists.")
-            # Insert new product into database
             return self.collection.insert_one(data)
-            # Return the newly inserted product
-            # return data
         except errors.PyMongoError as e:
             print(f"An error occurred: {e}")
             return None, "An error occurred while inserting the product."

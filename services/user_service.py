@@ -15,8 +15,6 @@ class user_service(base_service):
     def create(self, data):
         print(f'user_service create')
         if data['subscriptions']['plan-type'] == 'Subscription':
-            print(
-                f'user_service create type(data["subscriptions"]["end_date"]) {type(data['subscriptions']['end_date'])}')
             data['subscriptions']['end_date'] = datetime.strptime(data['subscriptions']['start_date'],
                                                                   '%Y-%m-%d') + relativedelta(years=1)
         if data['subscriptions']['plan-type'] == 'Monthly report':

@@ -19,6 +19,7 @@ class product_service(base_service):
             return self.repo.delete_by_category(category)
 
         def create(self, data):
+            print(f'product service create {data}')
             return self.repo.insert(data)
 
         def update(self, category, data):
