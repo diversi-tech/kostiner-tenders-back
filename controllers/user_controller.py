@@ -1,5 +1,5 @@
 from flask_jwt_extended import jwt_required
-from flask_restx import Resource
+from flask_restx import Resource, abort
 from flask import request
 
 from services import user_service
@@ -38,6 +38,30 @@ class PostUser(Resource):
     def post(self):
         '''create a new user'''
         new_user = request.json
+        user_service.validate_user(new_user)
+
+
+        # # Custom validation for date fields
+        # date_fields = ['purchase_date', 'start_date', 'end_date']
+        #
+        # for field in date_fields:
+        #     if field in new_user:
+        #         if not user_service.validate_date(new_user[field]):
+        #             abort(400, f"{field} must be in the format YYYY-MM-DD.")
+        #
+        # if 'purchase_history' in new_user:
+        #     for item in new_user['purchase_history']:
+        #         for field in ['purchase_date']:
+        #             if field in item:
+        #                 if not user_service.validate_date(item[field]):
+        #                     abort(400, f"purchase_history item field {field} must be in the format YYYY-MM-DD.")
+        #
+        # if 'subscriptions' in new_user:
+        #     for field in ['start_date', 'end_date']:
+        #         if field in new_user['subscriptions']:
+        #             if not user_service.validate_date(new_user['subscriptions'][field]):
+        #                 abort(400, f"subscriptions field {field} must be in the format YYYY-MM-DD.")
+
         print(f'user controller new_user: {new_user}')
         result = user_service.create(new_user)
         return result, 201
@@ -51,10 +75,14 @@ class PutUserById(Resource):
     def put(self, user_id):
         '''update user by id'''
         update_user = request.json
-        result = user_service.update(user_id, update_user)
-        if result.modified_count > 0:
-            updated_user = user_service.get_by_id(user_id)
-            return updated_user
+        user_service.validate_user(update_user)
+        try:
+            result = user_service.update(user_id, update_user)
+            if result.modified_count > 0:
+                updated_user = user_service.get_by_id(user_id)
+                return updated_user
+        except ValueError as e:
+            abort(400, str(e))
         namespace.abort(404, f"user {user_id} doesn't exist")
 
 
