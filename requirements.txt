@@ -9,5 +9,6 @@ Werkzeug==3.0.3
 pymongo==4.8.0
 python-dotenv==1.0.1
 requests==2.32.3
+pandas==2.2.2
 chardet
 openpyxl

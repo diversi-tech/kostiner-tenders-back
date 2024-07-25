@@ -1,18 +1,42 @@
-import json
+import ast
+from datetime import datetime
 from bson import ObjectId
 import pandas as pd
-from werkzeug.datastructures import FileStorage
-import io
 
 from dal.tender_repo import tender_repo, DataAlreadyExistsError
 from services.base_service import base_service
-
 
 class tender_service(base_service):
     def __init__(self):
         self.repo = tender_repo()
         super().__init__(self.repo)
         print('in __init__ in tender_service')
+
+    def get_all(self, user, search_date):
+        print(f'tender service get_all')
+        tender_list_array = []
+        start_date = datetime.strptime(user['subscriptions']['start_date'], '%Y-%m-%d')
+        end_date = datetime.strptime(user['subscriptions']['end_date'], '%Y-%m-%d')
+        categories = user['subscriptions']['categories']
+        print(f'tender service get_all categories: {categories}')
+
+        try:
+            new_search_date = datetime.strptime(search_date, '%Y-%m-%d') if search_date else start_date
+            print(f'tender service get_all new_start: {new_search_date}, start_date (from object): {start_date}')
+        except ValueError as e:
+            print(f"tender service get_all Error parsing dates: {e}")
+            raise e
+
+        print(f'tender service get_all start_date: {start_date}, end_date {end_date}, new_search_date: {new_search_date}')
+        if end_date < new_search_date or new_search_date < start_date:
+            e = ValueError('The date entered is not within the allowed range')
+            print(f'tender service get_all error e: {e} ')
+            raise e
+        for category in categories:
+            tender_list = self.repo.get_by_category(category, new_search_date, start_date, end_date)
+            tender_list_array.append(tender_list)
+
+        return tender_list_array
 
     def insert_from_csv(self, file):
         return self._insert_from_file(file, 'csv')
@@ -31,9 +55,11 @@ class tender_service(base_service):
                 df = pd.read_excel(file, engine='openpyxl')
                 print(f'tender service df.head() {df.head()}')
 
-            expected_columns = ["שם הגוף", "מספר מכרז", "שם מכרז", "תאריך פרסום", "תאריך הגשה", "מציעים", "קטגוריות", "שם הזוכה", "מידע על הזוכה"
-                                , "סכום ההצעה", "אומדן"
-                                ]
+            expected_columns = [
+                "שם הגוף", "שם ומספר המכרז", "תאריך פרסום", "תאריך הגשה", "קטגוריות", "שם הזוכה ופרטי הזוכה",
+                "מידע על הזוכה",
+                "מציעים", "סכום ההצעה", "אומדן"
+            ]
 
             actual_columns = df.columns.tolist()
 
@@ -47,13 +73,12 @@ class tender_service(base_service):
                     tender = {
                         'tender_id': ObjectId(),
                         'body_name': row['שם הגוף'],
-                        'tender_number': row['מספר מכרז'],
-                        'tender_name': row['שם מכרז'],
+                        'tender_number_name': row["שם ומספר המכרז"],
                         'published_date': row['תאריך פרסום'],
                         'submission_date': row['תאריך הגשה'],
-                        "category": row['קטגוריות'],
-                        'participants': row['מציעים'],
-                        'winner_name': row['שם הזוכה'],
+                        "category": ast.literal_eval(row['קטגוריות']),
+                        'participants': ast.literal_eval(row['מציעים']),
+                        'winner_name': row["שם הזוכה ופרטי הזוכה"],
                         'details_winner': row['מידע על הזוכה'],
                         'amount_bid': row['סכום ההצעה'],
                         'estimate': row['אומדן']

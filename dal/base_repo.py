@@ -24,19 +24,21 @@ class base_repo:
     # @requird_policy('user')
     def get(self):
         try:
-            print('in repo in get method')
+            print(f'base_repo get')
             return list(self.collection.find())
         except errors.PyMongoError as e:
             print(f"An error occurred: {e}")
             return []
 
     def get_by_id(self, object_id):
+        print(f'base repo get_by_id object_id: {object_id}')
         try:
-            print("tttttttt")
             obj_id = self.get_obj_id()
-            user= self.collection.find_one({obj_id: ObjectId(object_id)})
-            print(user)
-            return user
+            print(f'base repo get_by_id obj_id: {obj_id}, collection: {self.collection.name}')
+            result = self.collection.find_one({obj_id: ObjectId(object_id)})
+            print(f'base repo get_by_id result: {result}')
+            return result
+
         except errors.InvalidId as e:
             print(f"Invalid ID: {e}")
             return None

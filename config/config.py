@@ -2,7 +2,7 @@
 # import certifi
 # from flask_mail import Mail
 #
-# mail = Mail()
+#  = Mail()
 # ca = certifi.where()
 # try:
 #
@@ -32,9 +32,9 @@
 #     # print(result)
 # except Exception as e:
 #     print("Error: ", e)
-from pymongo import MongoClient
 import certifi
 from flask_mail import Mail
+from pymongo import MongoClient
 
 mail = Mail()
 ca = certifi.where()

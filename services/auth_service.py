@@ -1,7 +1,4 @@
 import os
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 from functools import wraps
 from datetime import datetime
 
@@ -11,10 +8,12 @@ from flask_jwt_extended import get_jwt_identity, get_current_user
 from itsdangerous import SignatureExpired, BadSignature
 
 from dal.auth_repo import AuthRepo
+from dal.user_repo import user_repo
 
 class AuthService:
     def __init__(self):
         self.auth_repo = AuthRepo()
+        self.repo = user_repo()
 
     def create_user(self, username, password):
         return self.auth_repo.create_user(username, password)
@@ -22,6 +21,9 @@ class AuthService:
     def verify_user(self, username, password):
 
         return self.auth_repo.verify_user(username, password)
+
+    def decode_google_jwt(self, token):
+        return self.auth_repo.decode_google_jwt(token)
 
     def find_user_by_email(self, email):
         return self.auth_repo.find_user_by_email(email)
@@ -57,28 +59,33 @@ class AuthService:
         return token_entry
 
     def reset_password(self, token, new_password):
+
         reset_token_entry = self.auth_repo.get_reset_token_entry(token)
         print(reset_token_entry)
-        if not reset_token_entry:
-            return 'Invalid or expired token', 400
-        if isinstance(reset_token_entry, dict):
-            email = reset_token_entry['email']
-            username = reset_token_entry['username']
-            role = reset_token_entry['role']
-            now = datetime.utcnow()
-            if reset_token_entry['exp'] < now.timestamp():
-                return 'Token has expired', 401
-            result = self.auth_repo.reset_password(email, role, new_password, username)
-            if isinstance(result, tuple):
-                message, status_code = result
-                return message, status_code
-            return 'Password has been reset successfully', 200
-        return 500
+        # if not reset_token_entry:
+        #     return 'Invalid or expired token', 400
+        # if isinstance(reset_token_entry, dict):
+        # user_id = reset_token_entry.get('user_id')
+        # print(user_id)
+        # user = user_repo.get_by_id(user_id)
+        # print(user)
+        email = reset_token_entry['email']
+        username = reset_token_entry['user_name']
+        role = reset_token_entry['role']
+        # now = datetime.utcnow()
+        # if reset_token_entry['exp'] < now.timestamp():
+        #     return 'Token has expired', 401
+        result = self.auth_repo.reset_password(email, role, new_password, username)
+        if isinstance(result, tuple):
+            message, status_code = result
+            return message, status_code
+        return 'Password has been reset successfully', 200
+        # return 500
 
 policies = {
-        "AdminPolicy": lambda user: user.get("role") == "admin",
-        "ClientPolicy": lambda user: user.get("role") == "client",
-        "UserPolicy": lambda user: user.get("role") == "user"
+        "AdminPolicy": lambda user: user.get() == "admin",
+        "ClientPolicy": lambda user: user.get() == "client",
+        "UserPolicy": lambda user: user.get() == "user"
     }
 
 def get_current_user():
@@ -104,8 +111,6 @@ def policy_required(policy_name):
             return decorated_function
 
         return decorator
-def generate_reset_token(self, email, username):
-             return self.auth_repo.generate_reset_token(email, username)
 
 
 

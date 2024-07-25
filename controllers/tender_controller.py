@@ -1,20 +1,46 @@
+from datetime import datetime
+import jwt
+from flask_jwt_extended import verify_jwt_in_request, jwt_required
 from flask_restx import Resource, abort
 from flask import request
-from pymongo.results import InsertManyResult, InsertOneResult
+from pymongo.results import InsertManyResult
 from werkzeug.datastructures import FileStorage
-import os
 
 from dal.tender_repo import DataAlreadyExistsError
 from services import tender_service
+from services import user_service
 from models_swagger.tender_model import namespace_tender as namespace, tender_model
+
 
 @namespace.route('/get-all-tenders')
 class GetAllTenders(Resource):
-    @namespace.doc('list_tender')
+    @namespace.doc(params={
+        'search date': 'search date of the range (format: DD-MM-YYYY)'
+    })
     @namespace.marshal_list_with(tender_model)
+    @namespace.response(401, 'Invalid token')
+    @namespace.response(400, 'Invalid date')
+    @jwt_required()
     def get(self):
         '''get all tenders'''
-        return tender_service.get_all()
+        try:
+            detail = verify_jwt_in_request()
+            user_id = detail[1].get("user_id")
+            user = user_service.get_by_id(user_id)
+            search_date = request.args.get('search date')
+            print(f'tender controller search date: {search_date}')
+            list_array = tender_service.get_all(user, search_date)
+            return list_array, 200
+        except ValueError as e:
+            abort(400, str(e))
+        except jwt.ExpiredSignatureError:
+            abort(401, "Token has expired")
+        except jwt.InvalidTokenError:
+            abort(401, "Invalid token")
+        except Exception as e:
+            print(f'tender controller Exception msg: {e}')
+            abort(400, str(e))
+
 
 @namespace.route('/get-id-tender/<string:tender_id>')
 @namespace.response(404, 'tender not found')
@@ -28,12 +54,15 @@ class GetTenderById(Resource):
             return tender
         namespace.abort(404, f"tender {tender_id} doesn't exist")
 
+
 @namespace.route('/post-upload-csv')
 class CSVUpload(Resource):
     upload_parser = namespace.parser()
     upload_parser.add_argument('file', location='files', type=FileStorage, required=True, help='CSV or Excel file')
+
     @namespace.expect(upload_parser)
     def post(self):
+        global result
         if 'file' not in request.files:
             abort(400, "No file part in the request")
         args = self.upload_parser.parse_args()
@@ -65,25 +94,13 @@ class CSVUpload(Resource):
             abort(500, str(e))
         return {"message": "Unexpected error occurred"}, 500
 
-@namespace.route('/post-tender')
-class PostTender(Resource):
-    @namespace.doc('post_tender')
-    @namespace.expect(tender_model)
-    @namespace.marshal_with(tender_model)
-    def post(self):
-        '''post tender by object'''
-        new_tender = request.json
-        print(f'tender controller post new_tender: {new_tender}')
-        result = tender_service.create(new_tender)
-        print(f'tender controller post result: {result}')
-        return result, 201
 
 @namespace.route('/update-tender/<string:tender_id>')
 class PutTenderById(Resource):
     @namespace.doc('update_tender')
     @namespace.expect(tender_model)
     @namespace.marshal_with(tender_model)
-    def put(self, tender_id):
+    def put(self, tender_id, namespace):
         '''update tender by id'''
         update_tender = request.json
         result = tender_service.update(tender_id, update_tender)
@@ -106,8 +123,7 @@ class DeleteTenderById(Resource):
 
 
 namespace.add_resource(GetAllTenders, '/get-all-tenders')
-namespace.add_resource(CSVUpload, '/post-upload-csv')
-namespace.add_resource(PostTender, '/post-tender')
 namespace.add_resource(GetTenderById, '/get-id-tender/<string:tender_id>')
+namespace.add_resource(CSVUpload, '/post-upload-csv')
 namespace.add_resource(PutTenderById, '/update-tender/<string:tender_id>')
 namespace.add_resource(DeleteTenderById, '/delete-tender/<string:tender_id>')

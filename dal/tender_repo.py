@@ -13,14 +13,14 @@ class tender_repo(base_repo):
             return 'tender_name'
 
     def insert_csv(self, data):
-        print(f'in tender_repo insert: len(data):{len(data)}')
+        print(f'tender_repo insert: len(data):{len(data)}')
         result = []
         try:
             for item in data:
                 print(f'tender repo item: {item}')
-                # print(f'tender repo item: {item['tender_number']}')
-                if not self.collection.find_one({'tender_number': item['tender_number']}):
-                    print(f'tender repo  if not self.collection.find_one')
+                print(f'tender repo item: {item["tender_number_name"]}')
+                if not self.collection.find_one({'tender_number_name': item['tender_number_name']}):
+                    print(f'tender repo if not self.collection.find_one')
                     result.append(item)
             if not result:
                 print(f'if not exist new object {result}')

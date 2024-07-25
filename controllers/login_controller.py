@@ -1,11 +1,12 @@
-from bson import json_util
+import jwt
+import requests
+from bson import ObjectId, json_util
 import json
-
+import os
 from flask_restx import Resource
 from flask import request, jsonify, make_response
 from flask_jwt_extended import create_access_token, get_jwt, jwt_required, get_jwt_identity
 
-# from app.app import BLACKLIST
 from config.config import mail
 from middlewares.blackList import BLACKLIST
 from models.login_model import login_model, auth_ns, reset_password_model,token_model
@@ -30,31 +31,7 @@ def serialize_user(user):
     return None
 
 
-# @auth_ns.route('/login', methods=['OPTIONS','POST'])
-# class Login(Resource):
-#     @auth_ns.expect(login_model)
-#     @auth_ns.response(200, 'Success')
-#     @auth_ns.response(401, 'Unauthorized')
-#     def post(self):
-#         data = request.json
-#         username = data.get('username')
-#         password = data.get('password')
-#         user_tuple=auth_service.verify_user(username, password)
-#         user_dict = user_tuple[0]
-#         print(user_dict)
-#         user_id = str(user_dict['_id'])  # להמיר את ה-ObjectId למחרוזת
-#         print(f"user_id: {user_id}")
-#         if user_dict:
-#             userrole = user_dict['role']
-#             additional_claims = {
-#                 'role': userrole,
-#                 'user_id': user_id
-#             }
-#             access_token =create_access_token(identity=userrole, additional_claims=additional_claims)
-#
-#             print(access_token)
-#             return {'access_token': 'Bearer ' + access_token}, 200
-@auth_ns.route('/login', methods=['OPTIONS','POST'])
+@auth_ns.route('/login')
 class Login(Resource):
     @auth_ns.expect(login_model)
     @auth_ns.response(200, 'Success', token_model)
@@ -75,6 +52,48 @@ class Login(Resource):
             return {'access_token': 'Bearer ' + access_token}, 200
         else:
             return jsonify({'message': 'Invalid credentials'}), 401
+
+
+@auth_ns.route('/continue-with-google')
+class Google(Resource):
+    @auth_ns.response(200, 'Success', token_model)
+    @auth_ns.response(400, 'failed')
+    def post(self):
+        data = request.json
+        token = data['token']
+
+        # אימות אסימון ההתחברות של גוגל
+        response = requests.get(
+            f'https://oauth2.googleapis.com/tokeninfo?id_token={token}')
+        print(response)
+        if response.status_code != 200:
+            return {'error': 'Failed to fetch user profile', 'status_code': response.status_code}, 400
+
+        profile_info = response.json()
+        print(f'response.json() = {response.json()}')
+        email = profile_info['email']
+        name = profile_info['name']
+        user = auth_service.find_user_by_email(email)
+
+        if user is not None:
+            additional_claims = {
+                'role': user['role'],
+                'user_id': serialize_user(user)['_id']
+            }
+            access_token = create_access_token(identity=user['role'], additional_claims=additional_claims)
+            return {'access_token': 'Bearer ' + access_token}, 200
+
+        # הוספת המשתמש למסד הנתונים
+        user = auth_service.create_user(name, email)
+        print(f'user = {user}')
+        additional_claims = {
+            'role': 'client',  # need a function to know if role is admin or client---!
+            'user_id': serialize_user(user)['_id']
+        }
+
+        access_token = create_access_token(identity="client", additional_claims=additional_claims)
+        return {'access_token': 'Bearer ' + access_token}, 200
+
     def options(self):
         """
         מתודת OPTIONS - מאפשרת בקשות CORS.
@@ -87,44 +106,6 @@ class Login(Resource):
             'Access-Control-Allow-Credentials': 'true'
 
         }
-# @auth_ns.route('/reset-password/request')
-# class PasswordResetRequest(Resource):
-#     @auth_ns.expect(reset_password_model)
-#     @auth_ns.response(200, 'Password reset email sent successfully')
-#     @auth_ns.response(400, 'User not found')
-#     def post(self):
-#         '''Initiate password reset'''
-#         data = request.json
-#         email = data.get('email')
-#         username = data.get('username')
-#
-#         if not auth_service.user_exists(email):
-#             return {'message': 'User not found'}, 400
-#
-#         # Generate a reset token and identifier
-#         token = auth_service.generate_reset_token(email, username)
-#         reset_link = f"https://kostiner-tenders.onrender.com/resetPasword"  # Use the identifier in the reset link
-#         body = f"""
-#         <html>
-#         <body style="font-family: Arial, sans-serif;">
-#
-#         <p>היי, {username}</p>
-#         <p>נראה שביקשת לאפס את הסיסמה שלך. לחץ על הקישור למטה כדי לאפס אותה:</p>
-#         <p><a href="{reset_link}" style="background-color: #0A3F3D; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">לאפס את הסיסמה</a></p>
-#         <p>הקישור זה יפוג בעוד 30 דקות.</p>
-#         <p>אם לא ביקשת זאת, אנא התעלם מאימייל זה.</p>
-#         </body>
-#         </html>
-#         """
-#         try:
-#             auth_service.send_email(email, 'Password Reset Request', body)
-#             print('Email sent successfully')
-#         except Exception as e:
-#             print(f'Failed to send email: {e}')
-#             return {'message': f'Failed to send email: {str(e)}'}, 500
-#
-#         print(token)
-#         return token
 
 @auth_ns.route('/reset-password/request')
 class PasswordResetRequest(Resource):
@@ -136,7 +117,6 @@ class PasswordResetRequest(Resource):
         data = request.json
         email = data.get('email')
         username = data.get('username')
-
         if not auth_service.user_exists(email):
             return {'message': 'User not found'}, 400
 
@@ -178,14 +158,9 @@ class PasswordResetResponse(Resource):
         """
         מתודת OPTIONS - מאפשרת בקשות CORS.
         """
-        return {'Allow': 'POST, OPTIONS'}, 200, {
+        return {'Allow': 'POST, OPTIONS'}, 200
 
-            'Access-Control-Allow-Origin': 'http://localhost:5173',
-            'Access-Control-Allow-Methods': 'POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-            'Access-Control-Allow-Credentials': 'true'
 
-        }
     @auth_ns.expect(token_model)
     @auth_ns.response(200, 'Password reset successful')
     @auth_ns.response(400, 'Invalid token')
@@ -193,8 +168,11 @@ class PasswordResetResponse(Resource):
     @auth_ns.response(500, 'Unknown error')
     def post(self):
         data = request.json
-        token = data.get('token')
+        # token = data.get('token')
+        token = data.get('access_token')
         new_password = data.get('new_password')
+        print("token",token)
+        print("new_password",new_password)
         result = auth_service.reset_password(token, new_password)
         if isinstance(result, tuple):
             message, status_code = result
