@@ -1,4 +1,7 @@
 import os
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from functools import wraps
 from datetime import datetime
 
@@ -19,8 +22,6 @@ class AuthService:
     def verify_user(self, username, password):
 
         return self.auth_repo.verify_user(username, password)
-
-
 
     def find_user_by_email(self, email):
         return self.auth_repo.find_user_by_email(email)
@@ -56,27 +57,23 @@ class AuthService:
         return token_entry
 
     def reset_password(self, token, new_password):
-
         reset_token_entry = self.auth_repo.get_reset_token_entry(token)
         print(reset_token_entry)
         if not reset_token_entry:
             return 'Invalid or expired token', 400
-
-        email = reset_token_entry['email']
-        username = reset_token_entry['username']
-        role = reset_token_entry['role']
-
-
-        now = datetime.utcnow()
-        if reset_token_entry['exp'] < now.timestamp():
-            return 'Token has expired', 401
-
-
-        result = self.auth_repo.reset_password(email, role, new_password, username)
-        if isinstance(result, tuple):
-            message, status_code = result
-            return message, status_code
-        return 'Password has been reset successfully', 200
+        if isinstance(reset_token_entry, dict):
+            email = reset_token_entry['email']
+            username = reset_token_entry['username']
+            role = reset_token_entry['role']
+            now = datetime.utcnow()
+            if reset_token_entry['exp'] < now.timestamp():
+                return 'Token has expired', 401
+            result = self.auth_repo.reset_password(email, role, new_password, username)
+            if isinstance(result, tuple):
+                message, status_code = result
+                return message, status_code
+            return 'Password has been reset successfully', 200
+        return 500
 
 policies = {
         "AdminPolicy": lambda user: user.get("role") == "admin",
@@ -107,6 +104,8 @@ def policy_required(policy_name):
             return decorated_function
 
         return decorator
+def generate_reset_token(self, email, username):
+             return self.auth_repo.generate_reset_token(email, username)
 
 
 

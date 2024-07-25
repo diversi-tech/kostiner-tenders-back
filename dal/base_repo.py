@@ -32,8 +32,11 @@ class base_repo:
 
     def get_by_id(self, object_id):
         try:
+            print("tttttttt")
             obj_id = self.get_obj_id()
-            return self.collection.find_one({obj_id: ObjectId(object_id)})
+            user= self.collection.find_one({obj_id: ObjectId(object_id)})
+            print(user)
+            return user
         except errors.InvalidId as e:
             print(f"Invalid ID: {e}")
             return None

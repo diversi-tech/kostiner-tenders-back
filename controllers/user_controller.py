@@ -9,9 +9,10 @@ class GetAllUsers(Resource):
     @namespace.marshal_list_with(user_model)
     def get(self):
         '''get all users'''
-        return user_service.get()
+        return user_service.get_all()
 
-@namespace.route('/get-id-user/<string:user_id>')
+
+@namespace.route('/get-id-user/<string:user_id>', methods=['GET', 'OPTIONS'])
 @namespace.response(404, 'user not found')
 class GetUserById(Resource):
     @namespace.doc('get_user')
@@ -22,6 +23,15 @@ class GetUserById(Resource):
         if user:
             return user
         namespace.abort(404, f"user {user_id} doesn't exist")
+    def options(self,user_id):
+        """
+        Handle OPTIONS requests for CORS.
+        """
+        return {'Allow': 'POST, OPTIONS, GET'}, 200, {
+            'Access-Control-Allow-Origin': 'http://localhost:5173',
+            'Access-Control-Allow-Methods': 'POST, OPTIONS, GET',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        }
 
 @namespace.route('/post-user')
 class PostUser(Resource):
@@ -31,7 +41,7 @@ class PostUser(Resource):
     def post(self):
         '''create a new user'''
         new_user = request.json
-        result = user_service.insert(new_user)
+        result = user_service.create(new_user)
         return result, 201
 
 
