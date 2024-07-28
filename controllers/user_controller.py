@@ -15,6 +15,9 @@ class GetAllUsers(Resource):
     def get(self):
         '''get all users'''
         print(f'user controller get')
+        users = user_service.get_all()
+        for user in users:
+            user_service.validate_user(user)
         return user_service.get_all()
 
 
@@ -32,6 +35,7 @@ class GetUserById(Resource):
             abort(400, "The entered value is not of type ObjectId")
         user = user_service.get_by_id(user_id)
         if user:
+            user_service.validate_user(user)
             return user
         namespace.abort(404, f"user {user_id} doesn't exist")
     def options(self,user_id):
@@ -73,9 +77,13 @@ class PutUserById(Resource):
             if result.modified_count > 0:
                 updated_user = user_service.get_by_id(user_id)
                 return updated_user
+            else:
+                abort(404, f"user {user_id} doesn't exist")
         except ValueError as e:
             abort(400, str(e))
-        namespace.abort(404, f"user {user_id} doesn't exist")
+        except Exception as e:
+            print(f'user controller put type(e) {type(e)}')
+
 
 
 @namespace.route('/delete-user/<string:user_id>')
