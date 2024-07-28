@@ -46,9 +46,13 @@ class base_repo:
             print(f"An error occurred: {e}")
             return None
 
-    def get_by_string(self, query):
+    def get_by_string(self, object_id):
         try:
-            return self.collection.find_one(query)
+            search = self.get_name_string()
+            return self.collection.find_one({search: object_id})
+        except errors.InvalidId as e:
+            print(f"Invalid ID: {e}")
+            return None
         except errors.PyMongoError as e:
             print(f"An error occurred: {e}")
             return None

@@ -16,7 +16,6 @@ class AuthRepo(base_repo):
         super().__init__('Kostiner', 'users')
 
 
-
     def create_user(self, username, password):
         hashed_password = generate_password_hash(password)
         self.collection.insert_one({'username': username, 'password': hashed_password})
@@ -37,17 +36,24 @@ class AuthRepo(base_repo):
 
     def user_exists(self, email):
         # print(email)
-        # print("list", list(self.collection.find({})))
+        # print("list", list(self.user_collection.find({})))
         return self.collection.find_one({'email': email}) is not None
 
     def get_reset_token_entry(self, token):
         try:
+            print(token)
             payload = jwt.decode(token, os.getenv('JWT_SECRET_KEY'), algorithms=['HS256'])
+            print("payload", payload)
             return payload
         except jwt.ExpiredSignatureError:
-            return None, None
+            print("Token has expired")
+            return None
         except jwt.InvalidTokenError:
-            return None, None
+            print("Invalid token")
+            return None
+        except Exception as e:
+            print(f"Error decoding token: {e}")
+            return None
 
     def decode_google_jwt(self, token):
         try:
@@ -76,16 +82,16 @@ class AuthRepo(base_repo):
 
     def reset_password(self, email, role, new_password, username):
         # חיפוש המשתמש לפי האימייל והשם משתמש
-        user = self.collection.find_one({'$and': [{'email': email}, {'username': username}, {'role': role}]})
+        user = self.collection.find_one({'$and': [{'email': email}, {'user_name': username}, {'role': role}]})
         if not user:
             return 'User not found', 400
 
+        query = {'$and': [{'user_name': username}, {'email': email}]}
         # עדכון הסיסמה למשתמש המתאים
         query = {'$and': [{'user_name': username}, {'email': email}]}
         update = {'$set': {'password': new_password}}
         self.collection.update_one(query, update)
-
-        # החזרת הודעה כי הסיסמה עודכנה בהצלחה
+        print(self.collection.find_one({'user_name': username}))
         return 'Password has been reset successfully', 200
 
         # פונקציה למחיקת רשומת הטוקן מהמסד הנתונים
@@ -95,7 +101,7 @@ class AuthRepo(base_repo):
         self.reset_token_collection.delete_one(query)
 
     # def generate_reset_token(self,email, username):
-    #     user = self.collection.find_one({'$and': [{'email': email}, {'first_name': username}]})
+    #     user = self.user_collection.find_one({'$and': [{'email': email}, {'first_name': username}]})
     #     if not user:
     #         raise Exception("User not found")
     #     role = user['role']
@@ -114,7 +120,7 @@ class AuthRepo(base_repo):
             'email': email,
             'user_name': username,
             'role': role,
-            'exp': datetime.utcnow() + timedelta(minutes=30)  # Token expiration time
+            'exp': datetime.utcnow() + timedelta(hours=3)  # Token expiration time
         }
         token = jwt.encode(token_data, os.getenv('JWT_SECRET_KEY'), algorithm='HS256')
         return token
@@ -130,9 +136,7 @@ class AuthRepo(base_repo):
         # 'username': username
         # })
         # return identifier
-
-
-    def reset_password(self, email, role, new_password, username):
+    def reset_password(self,email,role,new_password,username):
         user = self.collection.find_one({'$and': [{'email': email}, {'user_name': username},{'role': role}]})
         if user['email'] != email:
             return 'Email does not match the user', 400
