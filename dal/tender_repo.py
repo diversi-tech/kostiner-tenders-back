@@ -1,7 +1,4 @@
-from datetime import datetime
-
 from bson import ObjectId
-from pymongo import errors
 
 from dal.base_repo import base_repo
 
@@ -14,32 +11,6 @@ class tender_repo(base_repo):
         return 'tender_id'
     def get_name_string(self):
             return 'tender_name'
-    def get(self, query):
-        try:
-            print(f'in tender repo in get method self.collection.find(query)')
-            return list(self.collection.find(query))
-        except errors.PyMongoError as e:
-            print(f"An error occurred: {e}")
-            return []
-
-    def get_by_category(self, category, search_date, start_date, end_date):
-        print(f'tender_repo get_by_category category: {category}')
-        query = {
-            '$and': [
-                {'category': category},
-                {'published_date': {'$gte': start_date}},
-                {'published_date': {'$lte': end_date}}
-            ]
-        }
-        if search_date > start_date:
-            query['$and'].append({'published_date': {'$lte': search_date}})
-            print(query['$and'][3])
-        list_category = (self.collection
-                         .find(query)
-                         .sort('published_date', -1)
-                         .limit(100))
-        result_list = list(list_category)
-        return result_list
 
     def insert_csv(self, data):
         print(f'tender_repo insert: len(data):{len(data)}')
@@ -58,7 +29,24 @@ class tender_repo(base_repo):
         except Exception as e:
             print(f"Unexpected error: {e}")
             raise e
-
+    def get_by_category(self, category, search_date, start_date, end_date):
+            print(f'tender_repo get_by_category category: {category}')
+            query = {
+                '$and': [
+                    {'category': category},
+                    {'published_date': {'$gte': start_date}},
+                    {'published_date': {'$lte': end_date}}
+                ]
+            }
+            if search_date > start_date:
+                query['$and'].append({'published_date': {'$lte': search_date}})
+                print(query['$and'][3])
+            list_category = (self.collection
+                             .find(query)
+                             .sort('published_date', -1)
+                             .limit(100))
+            result_list = list(list_category)
+            return result_list
 class DataAlreadyExistsError(Exception):
     """Exception raised when data already exists in the database."""
     def __init__(self, code=400, details="Data already exists in the database"):

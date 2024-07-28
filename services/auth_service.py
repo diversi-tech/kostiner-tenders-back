@@ -8,10 +8,12 @@ from flask_jwt_extended import get_jwt_identity, get_current_user
 from itsdangerous import SignatureExpired, BadSignature
 
 from dal.auth_repo import AuthRepo
+from dal.user_repo import user_repo
 
 class AuthService:
     def __init__(self):
         self.auth_repo = AuthRepo()
+        self.repo = user_repo()
 
     def create_user(self, username, password):
         return self.auth_repo.create_user(username, password)
@@ -60,24 +62,25 @@ class AuthService:
 
         reset_token_entry = self.auth_repo.get_reset_token_entry(token)
         print(reset_token_entry)
-        if not reset_token_entry:
-            return 'Invalid or expired token', 400
-
+        # if not reset_token_entry:
+        #     return 'Invalid or expired token', 400
+        # if isinstance(reset_token_entry, dict):
+        # user_id = reset_token_entry.get('user_id')
+        # print(user_id)
+        # user = user_repo.get_by_id(user_id)
+        # print(user)
         email = reset_token_entry['email']
-        username = reset_token_entry['username']
+        username = reset_token_entry['user_name']
         role = reset_token_entry['role']
-
-
-        now = datetime.utcnow()
-        if reset_token_entry['exp'] < now.timestamp():
-            return 'Token has expired', 401
-
-
+        # now = datetime.utcnow()
+        # if reset_token_entry['exp'] < now.timestamp():
+        #     return 'Token has expired', 401
         result = self.auth_repo.reset_password(email, role, new_password, username)
         if isinstance(result, tuple):
             message, status_code = result
             return message, status_code
         return 'Password has been reset successfully', 200
+        # return 500
 
 policies = {
         "AdminPolicy": lambda user: user.get() == "admin",

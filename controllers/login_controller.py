@@ -4,16 +4,16 @@ from bson import ObjectId, json_util
 import json
 import os
 from flask_restx import Resource
-from flask import request
-from flask_jwt_extended import create_access_token
+from flask import request, jsonify, make_response
+from flask_jwt_extended import create_access_token, get_jwt, jwt_required, get_jwt_identity
 
 from config.config import mail
-from models.login_model import login_model, auth_ns, token_model, reset_password_model
+from middlewares.blackList import BLACKLIST
+from models.login_model import login_model, auth_ns, reset_password_model,token_model
 from services.auth_service import AuthService
 from flask_mail import Message
 
 auth_service = AuthService()
-
 
 def serialize_user(user):
     """Convert ObjectId instances in a user dictionary to strings."""
@@ -94,6 +94,18 @@ class Google(Resource):
         access_token = create_access_token(identity="client", additional_claims=additional_claims)
         return {'access_token': 'Bearer ' + access_token}, 200
 
+    def options(self):
+        """
+        מתודת OPTIONS - מאפשרת בקשות CORS.
+        """
+        return {'Allow': 'POST, OPTIONS'}, 200, {
+
+            'Access-Control-Allow-Origin': 'http://localhost:5173',
+            'Access-Control-Allow-Methods': 'POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+            'Access-Control-Allow-Credentials': 'true'
+
+        }
 
 @auth_ns.route('/reset-password/request')
 class PasswordResetRequest(Resource):
@@ -107,8 +119,10 @@ class PasswordResetRequest(Resource):
         username = data.get('username')
         if not auth_service.user_exists(email):
             return {'message': 'User not found'}, 400
+
+        # Generate a reset token and identifier
         token = auth_service.generate_reset_token(email, username)
-        reset_link = f"http://localhost:5173/reset-password/?id"  # Use the identifier in the reset link
+        reset_link = f"https://kostiner-tenders.onrender.com/resetPasword"  # Use the identifier in the reset link
         msg = Message('Password Reset Request', recipients=[email])
         msg.html = f"""
         <html>
@@ -128,48 +142,24 @@ class PasswordResetRequest(Resource):
         except Exception as e:
             print(f'Failed to send email: {e}')
             return {'message': f'Failed to send email: {str(e)}'}, 500
-
+        print(token)
         return token
 
 
-# @auth_ns.route('/reset-password/verify')
-# class PasswordResetVerify(Resource):
-#     @auth_ns.expect(token_verify_model)
-#     @auth_ns.response(200, 'Token verified')
-#     @auth_ns.response(400, 'Invalid or expired token')
-#     def post(self):
-#         '''Verify password reset token'''
-#         data = request.json
-#         identifier = data.get('identifier')
-#
-#         reset_token_entry = auth_service.get_reset_token_entry(identifier)
-#         if not reset_token_entry:
-#             return {'message': 'Invalid or expired token'}, 400
-#
-#         return {'message': 'Token verified', 'email': reset_token_entry['email'], 'username': reset_token_entry['username']}, 200
-
-@auth_ns.route('/reset-password/response', methods=['OPTIONS', 'POST'])
+@auth_ns.route('/reset-password/response', methods=['OPTIONS','POST'])
 class PasswordResetResponse(Resource):
-    @auth_ns.expect(token_model)
-    @auth_ns.response(200, 'Password reset successful')
-    @auth_ns.response(200, 'Password reset email sent successfully')
-    @auth_ns.response(400, 'Invalid or expired reset token')
-    @auth_ns.expect(token_model)
     @auth_ns.response(200, 'Password reset successful')
     @auth_ns.response(400, 'Invalid or expired token')
     @auth_ns.response(401, 'Token has expired')
     @auth_ns.response(404, 'User not found')
     @auth_ns.response(500, 'Unknown error')
+    @auth_ns.expect(token_model)
     def options(self):
         """
         מתודת OPTIONS - מאפשרת בקשות CORS.
         """
-        return {'Allow': 'POST, OPTIONS'}, 200, {
-            'Access-Control-Allow-Origin': 'http://localhost:5173',
-            'Access-Control-Allow-Methods': 'POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-            'Access-Control-Allow-Credentials': 'true'
-        }
+        return {'Allow': 'POST, OPTIONS'}, 200
+
 
     @auth_ns.expect(token_model)
     @auth_ns.response(200, 'Password reset successful')
@@ -178,11 +168,42 @@ class PasswordResetResponse(Resource):
     @auth_ns.response(500, 'Unknown error')
     def post(self):
         data = request.json
-        token = data.get('token')  # קבלת ה-UUID מהבקשה
+        # token = data.get('token')
+        token = data.get('access_token')
         new_password = data.get('new_password')
+        print("token",token)
+        print("new_password",new_password)
         result = auth_service.reset_password(token, new_password)
         if isinstance(result, tuple):
             message, status_code = result
             return {'message': message}, status_code
 
         return {'message': 'Unknown error occurred'}, 500
+
+@auth_ns.route('/logout')
+class Logout(Resource):
+    @jwt_required()
+    def options(self):
+        """
+        מתודת OPTIONS - מאפשרת בקשות CORS.
+        """
+        return {'Allow': 'POST, OPTIONS'}, 200, {
+
+            'Access-Control-Allow-Origin': 'http://localhost:5174',
+            'Access-Control-Allow-Methods': 'POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+            'Access-Control-Allow-Credentials': 'true'
+
+        }
+    @jwt_required()
+    def post(self):
+        jti = get_jwt()['jti']
+        try:
+            print(jti)
+            BLACKLIST.add(jti)
+            return {'message': 'Logged out successfully'}, 200
+        except Exception as e:
+            return jsonify({"msg": "Logout failed"}), 500
+
+
+
