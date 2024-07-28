@@ -20,11 +20,11 @@ class user_service(base_service):
     def create(self, data):
         print(f'user_service create')
         if data['subscriptions']['plan_type'] == 'Subscription':
-            data['subscriptions']['end_date'] = datetime.strptime(data['subscriptions']['start_date'],
-                                                                  '%Y-%m-%d') + relativedelta(years=1)
+            data['subscriptions']['end_date'] = str(datetime.strptime(data['subscriptions']['start_date'],
+                                                                  '%Y-%m-%d') + relativedelta(years=1))
         if data['subscriptions']['plan_type'] == 'Monthly report':
-            data['subscriptions']['end_date'] = datetime.strptime(data['subscriptions']['start_date'],
-                                                                  '%Y-%m-%d') + relativedelta(months=1)
+            data['subscriptions']['end_date'] = str(datetime.strptime(data['subscriptions']['start_date'],
+                                                                  '%Y-%m-%d') + relativedelta(months=1))
         if data['subscriptions']['plan_type'] == 'One-time report':
             data['subscriptions']['end_date'] = str(
                 datetime.strptime(data['subscriptions']['start_date'], '%Y-%m-%d') + relativedelta(days=1))
@@ -59,33 +59,53 @@ class user_service(base_service):
                     if not self.validate_date(user['subscriptions'][field]):
                         abort(400, f"subscriptions field {field} must be in the format YYYY-MM-DD.")
 
-    @staticmethod
-    def check_and_transfer_subscriptions(self):
-        try:
-            users = user_repo.get()
-        except PyMongoError as e:
-            self.logger.error(f"Error fetching users from database: {e}")
-            return
 
-        current_date = datetime.now().date()
-        for user in users:
-            try:
-                if user.get('subscriptions') and user['subscriptions']['end_date'] < current_date:
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+def check_and_transfer_subscriptions():
+    repo = user_repo()
+    logger.info("Running subscription check and transfer")
+    try:
+        users = repo.get()
+        logger.info(f"Fetched {len(users)} users from database")
+    except PyMongoError as e:
+        logger.error(f"Error fetching users from database: {e}")
+        return
+
+    current_date = datetime.now().date()
+    for user in users:
+        try:
+            subscription = user.get('subscriptions')
+            if subscription:
+                end_date = subscription['end_date']
+                if isinstance(end_date, str):
+                    end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+                elif isinstance(end_date, datetime):
+                    end_date = end_date.date()
+
+                if end_date < current_date:
+                    logger.info(f"Transferring subscription for user {user['user_id']}")
                     purchase = {
-                        'product_name': user['subscriptions']['plan_type'],
+                        'plan_type': user['subscriptions']['plan_type'],
                         'purchase_start_date': user['subscriptions']['start_date'],
                         'purchase_end_date': user['subscriptions']['end_date'],
                         'categories': user['subscriptions']['categories'],
-                        'amount': 0
+                        'amount': user['subscriptions']['amount']
                     }
                     user['purchase_history'].append(purchase)
                     user['subscriptions'] = None
-                    user_repo.update(user['user_id'], user)
-            except PyMongoError as e:
-                self.logger.error(f"Error updating user {user['_id']}: {e}")
-            except Exception as e:
-                self.logger.error(f"Unexpected error for user {user['_id']}: {e}")
+                    repo.update(user['user_id'], user)  # פונקציה שתעדכן את המשתמש במאגר
+                    logger.info(f"User {user['user_id']} subscription transferred")
+        except PyMongoError as e:
+            logger.error(f"Error updating user {user['user_id']}: {e}")
+        except Exception as e:
+            logger.error(f"Unexpected error for user {user['user_id']}: {e}")
 
-    scheduler = BackgroundScheduler()
-    scheduler.add_job(check_and_transfer_subscriptions, 'interval', days=1)
-    scheduler.start()
+
+scheduler = BackgroundScheduler()
+scheduler.add_job(check_and_transfer_subscriptions, 'interval', minutes=1)
+scheduler.start()
+
+logger.info("Scheduler started, job will run every 1 minutes")

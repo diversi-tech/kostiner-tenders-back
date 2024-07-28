@@ -7,7 +7,7 @@ nameSpace_user = Namespace(name=str('user'),
                            )
 
 purchase_model = nameSpace_user.model('purchase_history', {
-    'product_name': fields.String(required=True, description='Subscription name'),
+    'plan_type': fields.String(required=True, description='Subscription name'),
     'purchase_start_date': fields.Date(required=True, description='Subscription start date'),
     'purchase_end_date': fields.Date(required=True, description='Subscription end date'),
     'categories': fields.List(fields.String, required=False, description='Subscription categories'),
