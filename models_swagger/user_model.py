@@ -7,19 +7,19 @@ nameSpace_user = Namespace(name=str('user'),
                            )
 
 purchase_model = nameSpace_user.model('purchase_history', {
-    'purchase_id': fields.String(required=True, description='purchase_id'),
-    'product_name': fields.String(required=True, description='product_name'),
-    'purchase_date': fields.Date(required=True, description='purchase_date'),
+    'product_name': fields.String(required=True, description='Subscription name'),
+    'purchase_start_date': fields.Date(required=True, description='Subscription start date'),
+    'purchase_end_date': fields.Date(required=True, description='Subscription end date'),
+    'categories': fields.List(fields.String, required=False, description='Subscription categories'),
     'amount': fields.Integer(required=True, description='purchase_amount')
 })
 
 subscription = nameSpace_user.model('subscription', {
-    # 'subscription_id': fields.String(required=True, description='subscription_id'),
-    'plan-type': fields.String(required=True, description='plan', default='Subscription', choices=('One-time report', 'Monthly report', 'Subscription')),
+    'plan_type': fields.String(required=True, description='plan', default='Subscription', choices=('Tender report', 'One-time category', 'Subscription')),
     'start_date': fields.Date(required=True, description='start_date'),
     'end_date': fields.Date(required=True, description='end_date'),
-    'categories': fields.List(fields.String, required=False, description='category')
-    # 'tender': fields.String(required=False, )
+    'categories': fields.List(fields.String, required=False, description='category'),
+    'amount': fields.Integer(required=True, description='purchase_amount')
 }
                                     )
 
