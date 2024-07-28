@@ -3,13 +3,11 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager, verify_jwt_in_request
 from flask_restx import Api
 
-import middlewares
 from middlewares.authorization_middleware import before_request_middleware
 from controllers.login_controller import auth_ns
 from controllers.user_controller import namespace as namespace_user
 from controllers.tender_controller import namespace as namespace_tender
 from controllers.product_controller import namespace as namespace_product
-from controllers.subscription_registration_controller import nameSpace_subscription
 from config.config import mail
 from middlewares.blackList import check_if_token_in_blacklist
 
@@ -37,13 +35,16 @@ app.config['JWT_TOKEN_LOCATION'] = ['headers']
 
 mail.init_app(app)
 jwt = JWTManager(app)
-app.before_request(middlewares.authorization_middleware.before_request_middleware())
+app.before_request(before_request_middleware())
 @jwt.token_in_blocklist_loader
 def check_if_token_in_blacklist_callback(jwt_header, jwt_payload):
     return check_if_token_in_blacklist(jwt_header, jwt_payload)
-app.before_request(before_request_middleware())
 
-CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://localhost:5174"}})
+# app.before_request(before_request_middleware())
+
+# CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://localhost:5174"}})
+CORS(app, supports_credentials=True, resources={r"/*": {"origins": ["https://kostiner-tenders.onrender.com", "http://localhost:5174"]}})
+
 
 api = Api()
 
@@ -54,7 +55,7 @@ api.add_namespace(namespace_user)
 api.add_namespace(namespace_tender)
 api.add_namespace(auth_ns, path='/auth')
 api.add_namespace(namespace_product)
-api.add_namespace(namespace_user, path='/users')
+# api.add_namespace(namespace_user, path='/users')
 
 
 
