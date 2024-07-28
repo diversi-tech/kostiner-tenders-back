@@ -1,6 +1,9 @@
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from flask_restx import abort
+from apscheduler.schedulers.background import BackgroundScheduler
+from pymongo.errors import PyMongoError
+import logging
 
 from dal.user_repo import user_repo
 from services.base_service import base_service
@@ -10,17 +13,19 @@ class user_service(base_service):
     def __init__(self):
         super().__init__(user_repo())
         self.repo = user_repo()
+        logging.basicConfig(level=logging.INFO)
+        self.logger = logging.getLogger(__name__)
         print('in __init__ in user_service')
 
     def create(self, data):
         print(f'user_service create')
-        if data['subscriptions']['plan-type'] == 'Subscription':
+        if data['subscriptions']['plan_type'] == 'Subscription':
             data['subscriptions']['end_date'] = datetime.strptime(data['subscriptions']['start_date'],
                                                                   '%Y-%m-%d') + relativedelta(years=1)
-        if data['subscriptions']['plan-type'] == 'Monthly report':
+        if data['subscriptions']['plan_type'] == 'Monthly report':
             data['subscriptions']['end_date'] = datetime.strptime(data['subscriptions']['start_date'],
                                                                   '%Y-%m-%d') + relativedelta(months=1)
-        if data['subscriptions']['plan-type'] == 'One-time report':
+        if data['subscriptions']['plan_type'] == 'One-time report':
             data['subscriptions']['end_date'] = str(
                 datetime.strptime(data['subscriptions']['start_date'], '%Y-%m-%d') + relativedelta(days=1))
         return super().create(data)
@@ -54,3 +59,33 @@ class user_service(base_service):
                     if not self.validate_date(user['subscriptions'][field]):
                         abort(400, f"subscriptions field {field} must be in the format YYYY-MM-DD.")
 
+    @staticmethod
+    def check_and_transfer_subscriptions(self):
+        try:
+            users = user_repo.get()
+        except PyMongoError as e:
+            self.logger.error(f"Error fetching users from database: {e}")
+            return
+
+        current_date = datetime.now().date()
+        for user in users:
+            try:
+                if user.get('subscriptions') and user['subscriptions']['end_date'] < current_date:
+                    purchase = {
+                        'product_name': user['subscriptions']['plan_type'],
+                        'purchase_start_date': user['subscriptions']['start_date'],
+                        'purchase_end_date': user['subscriptions']['end_date'],
+                        'categories': user['subscriptions']['categories'],
+                        'amount': 0
+                    }
+                    user['purchase_history'].append(purchase)
+                    user['subscriptions'] = None
+                    user_repo.update(user['user_id'], user)
+            except PyMongoError as e:
+                self.logger.error(f"Error updating user {user['_id']}: {e}")
+            except Exception as e:
+                self.logger.error(f"Unexpected error for user {user['_id']}: {e}")
+
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(check_and_transfer_subscriptions, 'interval', days=1)
+    scheduler.start()
