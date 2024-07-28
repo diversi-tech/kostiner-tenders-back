@@ -34,5 +34,5 @@ user_data_model = nameSpace_user.model('user', {
     'last_name': fields.String(required=True, description='last_name of the user'),
     'business_name': fields.String(required=True, description='business_name of the user'),
     'purchase_history': fields.List(fields.Nested(purchase_model, required=True, description='purchase_history'), required=True, description='purchase_history'),
-    'subscriptions': fields.Nested(subscription, required=True, description='subscriptions')
+    'subscriptions': fields.Nested(subscription, required=False, description='subscriptions')
 })

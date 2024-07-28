@@ -15,7 +15,7 @@ from models_swagger.tender_model import namespace_tender as namespace, tender_mo
 @namespace.route('/get-all-tenders')
 class GetAllTenders(Resource):
     @namespace.doc(params={
-        'search date': 'search date of the range (format: DD-MM-YYYY)'
+        'search date': 'search date of the range (format: YYYY-MM-DD)'
     })
     @namespace.marshal_list_with(tender_model)
     @namespace.response(401, 'Invalid token')
