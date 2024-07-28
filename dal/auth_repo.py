@@ -36,7 +36,7 @@ class AuthRepo(base_repo):
 
     def user_exists(self, email):
         # print(email)
-        # print("list", list(self.user_collection.find({})))
+        # print("list", list(self.collection.find({})))
         return self.collection.find_one({'email': email}) is not None
 
     def get_reset_token_entry(self, token):

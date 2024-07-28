@@ -29,7 +29,24 @@ class tender_repo(base_repo):
         except Exception as e:
             print(f"Unexpected error: {e}")
             raise e
-
+    def get_by_category(self, category, search_date, start_date, end_date):
+            print(f'tender_repo get_by_category category: {category}')
+            query = {
+                '$and': [
+                    {'category': category},
+                    {'published_date': {'$gte': start_date}},
+                    {'published_date': {'$lte': end_date}}
+                ]
+            }
+            if search_date > start_date:
+                query['$and'].append({'published_date': {'$lte': search_date}})
+                print(query['$and'][3])
+            list_category = (self.collection
+                             .find(query)
+                             .sort('published_date', -1)
+                             .limit(100))
+            result_list = list(list_category)
+            return result_list
 class DataAlreadyExistsError(Exception):
     """Exception raised when data already exists in the database."""
     def __init__(self, code=400, details="Data already exists in the database"):

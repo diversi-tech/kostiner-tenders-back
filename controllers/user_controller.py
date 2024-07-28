@@ -9,6 +9,7 @@ from models_swagger.user_model import nameSpace_user as namespace, user_data_mod
 class GetAllUsers(Resource):
     @namespace.doc('list_user')
     @namespace.marshal_list_with(user_data_model)
+    @jwt_required()
     def get(self):
         '''get all users'''
         print(f'user controller get')
