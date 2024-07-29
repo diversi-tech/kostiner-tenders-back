@@ -57,9 +57,9 @@ class PostUser(Resource):
     def post(self):
         '''create a new user'''
         new_user = request.json
-        user_service.validate_user(new_user)
         print(f'user controller new_user: {new_user}')
         result = user_service.create(new_user)
+        user_service.validate_user(result)
         return result, 201
 
 

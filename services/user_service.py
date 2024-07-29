@@ -21,13 +21,13 @@ class user_service(base_service):
         print(f'user_service create')
         if 'subscriptions' in data and data['subscriptions']['plan_type'] == 'Subscription':
             data['subscriptions']['end_date'] = str(datetime.strptime(data['subscriptions']['start_date'],
-                                                                  '%Y-%m-%d') + relativedelta(years=1))
+                                                                  '%Y-%m-%d').date() + relativedelta(years=1))
         if 'subscriptions' in data and data['subscriptions']['plan_type'] == 'Monthly report':
             data['subscriptions']['end_date'] = str(datetime.strptime(data['subscriptions']['start_date'],
-                                                                  '%Y-%m-%d') + relativedelta(months=1))
+                                                                  '%Y-%m-%d').date() + relativedelta(months=1))
         if 'subscriptions' in data and data['subscriptions']['plan_type'] == 'One-time report':
             data['subscriptions']['end_date'] = str(
-                datetime.strptime(data['subscriptions']['start_date'], '%Y-%m-%d') + relativedelta(days=1))
+                datetime.strptime(data['subscriptions']['start_date'], '%Y-%m-%d').date() + relativedelta(days=1))
         return super().create(data)
 
     def validate_date(self, date_str):
@@ -80,33 +80,44 @@ def check_and_transfer_subscriptions():
         return
 
     current_date = datetime.now().date()
-    for user in users:
+    for ind, user in enumerate(users):
+        if 'user_id' not in user:
+            logger.error(f"User at index {ind} is missing 'user_id'")
+            continue
+
+        logger.info(f"{ind}. Checking user {user.get('user_id')}")
         try:
             subscription = user.get('subscriptions')
             if subscription:
-                end_date = subscription['end_date']
+                end_date = subscription.get('end_date')
                 if isinstance(end_date, str):
                     end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
                 elif isinstance(end_date, datetime):
                     end_date = end_date.date()
 
+                logger.info('before "if end_date < current_date"')
                 if end_date < current_date:
-                    logger.info(f"Transferring subscription for user {user['user_id']}")
+                    logger.info(f"Transferring subscription for user {user.get('user_id')}")
                     purchase = {
-                        'plan_type': user['subscriptions']['plan_type'],
-                        'purchase_start_date': user['subscriptions']['start_date'],
-                        'purchase_end_date': user['subscriptions']['end_date'],
-                        'categories': user['subscriptions']['categories'],
-                        'amount': user['subscriptions']['amount']
+                        'plan_type': subscription.get('plan_type'),
+                        'purchase_start_date': subscription.get('start_date'),
+                        'purchase_end_date': subscription.get('end_date'),
+                        'categories': subscription.get('categories'),
+                        'amount': subscription.get('amount')
                     }
-                    user['purchase_history'].append(purchase)
+                    logger.info(f"user['purchase_history'].count() {len(user.get('purchase_history', []))}")
+                    purchase_history = user.get('purchase_history')
+                    if purchase_history and isinstance(purchase_history, list):
+                        purchase_history.append(purchase)
+                    else:
+                        user['purchase_history'] = [purchase]
                     user['subscriptions'] = None
-                    repo.update(user['user_id'], user)
-                    logger.info(f"User {user['user_id']} subscription transferred")
+                    repo.update(user.get('user_id'), user)
+                    logger.info(f"User {user.get('user_id')} subscription transferred")
         except PyMongoError as e:
-            logger.error(f"Error updating user {user['user_id']}: {e}")
+            logger.error(f"Error updating user {user.get('user_id')}: {e}")
         except Exception as e:
-            logger.error(f"Unexpected error for user {user['user_id']}: {e}")
+            logger.error(f"Unexpected error for user {user.get('user_id')}: {e} the type(e): {type(e)}")
 
 
 scheduler = BackgroundScheduler()

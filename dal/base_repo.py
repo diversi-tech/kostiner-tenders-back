@@ -62,7 +62,6 @@ class base_repo:
             data[self.get_obj_id()] = ObjectId()
             result = self.collection.insert_one(data)
             return self.get_by_id(data[self.get_obj_id()])
-            # return result
         except errors.PyMongoError as e:
             print(f"An error occurred: {e}")
             return None
