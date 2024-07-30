@@ -41,7 +41,7 @@ class user_service(base_service):
             return False
 
     def validate_user(self, user):
-        date_fields = ['purchase_date', 'start_date', 'end_date']
+        date_fields = ['purchase_start_date', 'purchase_end_date', 'start_date', 'end_date']
 
         if not user:
             abort(400, "user is null")
@@ -49,20 +49,20 @@ class user_service(base_service):
         for field in date_fields:
             if field in user:
                 if not self.validate_date(user[field]):
-                    abort(400, f"'{field}' must be in the format YYYY-MM-DD. user: {user['first_name']}")
+                    abort(400, f"'{field}' must be in the format YYYY-MM-DD. id: {user['user_id']} user: {user['first_name']}")
 
         if 'purchase_history' in user:
             for item in user['purchase_history']:
                 for field in ['purchase_date']:
                     if field in item:
                         if not self.validate_date(item[field]):
-                            abort(400, f"purchase_history item field '{field}' must be in the format YYYY-MM-DD. user: {user['first_name']}")
+                            abort(400, f"purchase_history item field '{field}' must be in the format YYYY-MM-DD.  id: {user['user_id']} user: {user['first_name']}")
 
         if 'subscriptions' in user and user['subscriptions'] is not None:
             for field in ['start_date', 'end_date']:
                 if field in user['subscriptions']:
                     if not self.validate_date(user['subscriptions'][field]):
-                        abort(400, f"subscriptions field '{field}' must be in the format YYYY-MM-DD. user: {user['first_name']}")
+                        abort(400, f"subscriptions field '{field}' must be in the format YYYY-MM-DD. user:  id: {user['user_id']} {user['first_name']}")
 
 
 logging.basicConfig(level=logging.INFO)

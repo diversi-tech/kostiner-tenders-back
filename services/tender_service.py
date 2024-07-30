@@ -68,16 +68,19 @@ class tender_service(base_service):
 
             data = df.to_dict(orient='records')
             print(f'tender service data: {data}')
+
             for row in data:
                 try:
+                    categories = row['קטגוריות'].split(',')
+                    participants = row['מציעים'].split(',')
                     tender = {
                         'tender_id': ObjectId(),
                         'body_name': row['שם הגוף'],
                         'tender_number_name': row["שם ומספר המכרז"],
                         'published_date': row['תאריך פרסום'],
                         'submission_date': row['תאריך הגשה'],
-                        "category": ast.literal_eval(row['קטגוריות']),
-                        'participants': ast.literal_eval(row['מציעים']),
+                        "category": categories,
+                        'participants': participants,
                         'winner_name': row["שם הזוכה ופרטי הזוכה"],
                         'details_winner': row['מידע על הזוכה'],
                         'amount_bid': row['סכום ההצעה'],

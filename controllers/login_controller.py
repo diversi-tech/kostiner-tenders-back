@@ -188,13 +188,12 @@ class Logout(Resource):
         מתודת OPTIONS - מאפשרת בקשות CORS.
         """
         return {'Allow': 'POST, OPTIONS'}, 200, {
-
-            'Access-Control-Allow-Origin', "https://kostiner-tenders.onrender.com",
+            'Access-Control-Allow-Origin': "https://kostiner-tenders.onrender.com",
             'Access-Control-Allow-Methods': 'POST, OPTIONS',
             'Access-Control-Allow-Headers': 'Content-Type, Authorization',
             'Access-Control-Allow-Credentials': 'true'
-
         }
+
     @jwt_required()
     def post(self):
         jti = get_jwt()['jti']
