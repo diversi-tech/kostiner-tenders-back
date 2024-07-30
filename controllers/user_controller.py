@@ -18,6 +18,7 @@ class GetAllUsers(Resource):
         users = user_service.get_all()
         for user in users:
             user_service.validate_user(user)
+            continue
         return user_service.get_all()
 
 
