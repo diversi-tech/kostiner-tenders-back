@@ -43,7 +43,7 @@ def check_if_token_in_blacklist_callback(jwt_header, jwt_payload):
 # app.before_request(before_request_middleware())
 
 # CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://localhost:5174"}})
-CORS(app, supports_credentials=True, resources={r"/*": {"origins": ["https://kostiner-tenders.onrender.com", "http://localhost:5174"]}})
+CORS(app, supports_credentials=True, resources={r"/*": {"origins": ["https://kostiner-tenders.onrender.com", "http://localhost:5174","http://localhost:5173"]}})
 
 
 api = Api()
