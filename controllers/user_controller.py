@@ -41,7 +41,7 @@ class GetUserById(Resource):
         namespace.abort(404, f"user {user_id} doesn't exist")
     def options(self,user_id):
         origin = request.headers.get('Origin')
-        allowed_origins = ["https://kostiner-tenders.onrender.com", "http://localhost:5174"]
+        allowed_origins = ["https://kostiner-tenders.onrender.com", "http://localhost:5174", "http://localhost:5173"]
 
         if origin in allowed_origins:
             return {'Allow': 'POST, OPTIONS'}, 200, {
