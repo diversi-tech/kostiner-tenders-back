@@ -40,14 +40,23 @@ class GetUserById(Resource):
             return user
         namespace.abort(404, f"user {user_id} doesn't exist")
     def options(self,user_id):
-        """
-        Handle OPTIONS requests for CORS.
-        """
-        return {'Allow': 'POST, OPTIONS, GET'}, 200, {
-            'Access-Control-Allow-Origin': 'http://localhost:5174',
-            'Access-Control-Allow-Methods': 'POST, OPTIONS, GET',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        }
+        origin = request.headers.get('Origin')
+        allowed_origins = ["https://kostiner-tenders.onrender.com", "http://localhost:5174"]
+
+        if origin in allowed_origins:
+            return {'Allow': 'POST, OPTIONS'}, 200, {
+                'Access-Control-Allow-Origin': origin,
+                'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                'Access-Control-Allow-Credentials': 'true'
+            }
+        else:
+            return {'Allow': 'POST, OPTIONS'}, 403, {
+                'Access-Control-Allow-Origin': 'null',
+                'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                'Access-Control-Allow-Credentials': 'true'
+            }
 
 
 @namespace.route('/post-user')
