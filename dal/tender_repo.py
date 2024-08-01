@@ -47,6 +47,43 @@ class tender_repo(base_repo):
                              .limit(100))
             result_list = list(list_category)
             return result_list
+
+
+    def search(self, criteria):
+        print(f"Search criteria: {criteria}")
+        mongo_query = self.build_mongo_query(criteria)
+        print(f"MongoDB query: {mongo_query}")
+        query = self.collection.find(mongo_query)
+        results = list(query)
+        print(f"Query results: {results}")
+        return results
+
+    def build_mongo_query(self, criteria):
+        print(f"in build_mongo_query")
+        query = {}
+
+        if 'body_name' in criteria:
+            query['body_name'] = criteria['body_name']
+        if 'tender_number_name' in criteria:
+            query['tender_number_name'] = criteria['tender_number_name']
+        if 'published_date' in criteria:
+            query['published_date'] = criteria['published_date']
+        if 'submission_date' in criteria:
+            query['submission_date'] = criteria['submission_date']
+        if 'category' in criteria and criteria['category']:
+            query['category'] = {"$in": criteria['category']}
+        if 'winner_name' in criteria:
+            query['winner_name'] = criteria['winner_name']
+        if 'details_winner' in criteria:
+            query['details_winner'] = criteria['details_winner']
+        if 'participants' in criteria and criteria['participants']:
+            query['participants'] = {"$in": criteria['participants']}
+        if 'amount_bid' in criteria:
+            query['amount_bid'] = criteria['amount_bid']
+        if 'estimate' in criteria:
+            query['estimate'] = criteria['estimate']
+
+        return query
 class DataAlreadyExistsError(Exception):
     """Exception raised when data already exists in the database."""
     def __init__(self, code=400, details="Data already exists in the database"):

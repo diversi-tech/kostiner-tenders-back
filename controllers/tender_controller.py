@@ -1,7 +1,7 @@
 from datetime import datetime
 import jwt
 from flask_jwt_extended import verify_jwt_in_request, jwt_required
-from flask_restx import Resource, abort
+from flask_restx import Resource, abort, fields
 from flask import request
 from pymongo.results import InsertManyResult
 from werkzeug.datastructures import FileStorage
@@ -121,7 +121,66 @@ class DeleteTenderById(Resource):
             return 'The tender deleted successfully'
         namespace.abort(404, f"tender {tender_id} doesn't exist")
 
+@namespace.route('/search')
+class TenderSearch(Resource):
+    @namespace.doc('search_tender')
+    @namespace.expect(namespace.model('SearchCriteria', {
+        'body_name': fields.String(required=False, description='body_names'),
+        'tender_number_name': fields.String(required=False, description='tender_number'),
+        'published_date': fields.Date(required=False, description='published_date'),
+        'submission_date': fields.Date(required=False, description='submission_date'),
+        "category": fields.List(fields.String, required=False, description='category'),
+        'winner_name': fields.String(required=False, description='winner_name'),
+        'details_winner': fields.String(required=False, description='details_winner'),
+        'participants': fields.List(fields.String, required=False, description='participants'),
+        'amount_bid': fields.Float(required=False, description='amount_bid'),
+        'estimate': fields.Float(required=False, description='estimate')
+    }))
+    @namespace.marshal_list_with(tender_model)
+    @namespace.response(401, 'Invalid token')
+    @namespace.response(400, 'Invalid date')
+    @jwt_required()
+    def post(self):
+        '''Search for tenders'''
+        try:
+            detail = verify_jwt_in_request()
+            user_id = detail[1].get("user_id")
+            user = user_service.get_by_id(user_id)
+            print(f'tender controller search date: {user}')
+            criteria = request.json
+            if not criteria:
+                namespace.abort(400, "Search criteria cannot be empty")
 
+            # Convert string dates to datetime objects if provided
+            if 'published_date' in criteria:
+                try:
+                    criteria['published_date'] = datetime.strptime(criteria['published_date'], '%Y-%m-%d')
+                except ValueError:
+                    namespace.abort(400, "Invalid published_date format")
+
+            if 'submission_date' in criteria:
+                try:
+                    criteria['submission_date'] = datetime.strptime(criteria['submission_date'], '%Y-%m-%d')
+                except ValueError:
+                    namespace.abort(400, "Invalid submission_date format")
+
+            results = tender_service.search(user, criteria)
+            print(f'results in controller {results}')
+            return results, 200
+
+        except ValueError as e:
+            abort(400, str(e))
+        except jwt.ExpiredSignatureError:
+            abort(401, "Token has expired")
+        except jwt.InvalidTokenError:
+            abort(401, "Invalid token")
+        except Exception as e:
+            print(f'tender controller Exception msg: {e}')
+            abort(400, str(e))
+
+
+
+namespace.add_resource(TenderSearch, '/search')
 namespace.add_resource(GetAllTenders, '/get-all-tenders')
 namespace.add_resource(GetTenderById, '/get-id-tender/<string:tender_id>')
 namespace.add_resource(CSVUpload, '/post-upload-csv')
