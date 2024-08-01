@@ -184,7 +184,7 @@ class PasswordResetResponse(Resource):
 class Logout(Resource):
     @jwt_required()
     def options(self):
-    origin = request.headers.get('Origin')
+        origin = request.headers.get('Origin')
         allowed_origins = ["https://kostiner-tenders.onrender.com", "http://localhost:5174","http://localhost:5173"]
 
         if origin in allowed_origins:

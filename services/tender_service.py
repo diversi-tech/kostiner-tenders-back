@@ -110,3 +110,43 @@ class tender_service(base_service):
         except Exception as e:
             print(f'tender service Exception: {e}')
             raise e
+
+
+    def search(self, user, criteria):
+        print(f'Tender service search with criteria: {criteria}')
+
+        if not user['subscriptions'].get('start_date') or not user['subscriptions'].get('end_date'):
+            raise ValueError('אין לך גישה למכרזים האלו')
+
+        # Parse subscription dates
+        start_date = datetime.strptime(user['subscriptions']['start_date'], '%Y-%m-%d')
+        end_date = datetime.strptime(user['subscriptions']['end_date'], '%Y-%m-%d')
+        user_categories = set(user['subscriptions']['categories'])
+        print(f'tender_service user categories: {user_categories}')
+        print(f'tender_service dates: {start_date},{end_date}')
+
+        # Filter categories to include only those in the user's subscription
+        if 'category' in criteria:
+            print(f' if category in criteria:')
+            criteria_categories = set(criteria['category'])
+            valid_categories = criteria_categories.intersection(user_categories)
+            criteria['category'] = list(valid_categories)
+            print(f'Filtered criteria categories: {criteria["category"]}')
+        else:
+            print(f' else category in criteria:')
+            criteria['category'] = list(user_categories)
+
+        if not criteria['category']:
+            criteria['category'] = list(user_categories)
+
+        # Ensure 'published_date' is within the allowed date range
+        if 'published_date' in criteria:
+            print(f'published_date: {criteria["published_date"]}')
+            if not (start_date <= criteria['published_date'] <= end_date):
+                raise ValueError("No access to tenders with the given published_date")
+        else:
+            criteria['published_date'] = {'$gte': start_date, '$lte': end_date}
+        print(f'Filtered criteria : {criteria}')
+
+        # Call the repository's search method with filtered criteria and date range
+        return self.repo.search(criteria)
