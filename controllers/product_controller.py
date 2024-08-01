@@ -12,7 +12,6 @@ from services.auth_service import policy_required
 class GetAllProducts(Resource):
     @namespace.doc('list_products')
     @namespace.marshal_list_with(product_model)
-    @jwt_required()
     def get(self):
         '''get all product'''
         return product_service.get_all()
