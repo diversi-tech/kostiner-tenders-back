@@ -8,8 +8,10 @@ from controllers.login_controller import auth_ns
 from controllers.user_controller import namespace as namespace_user
 from controllers.tender_controller import namespace as namespace_tender
 from controllers.product_controller import namespace as namespace_product
+from controllers.payment_controller import nameSpace_payment
 from config.config import mail
 from middlewares.blackList import check_if_token_in_blacklist
+
 
 authorizations = {
     'jwt': {
@@ -55,6 +57,7 @@ api.add_namespace(namespace_user)
 api.add_namespace(namespace_tender)
 api.add_namespace(auth_ns, path='/auth')
 api.add_namespace(namespace_product)
+api.add_namespace(nameSpace_payment)
 # api.add_namespace(namespace_user, path='/users')
 
 

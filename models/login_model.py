@@ -24,3 +24,10 @@ reset_password_model = auth_ns.model('ResetPassword', {
     'email': fields.String(required=True, description='User email address'),
     'username':fields.String(requests=True, desctiption='username')
 })
+
+googleToken_model= auth_ns.model('googleToken',{
+    'token': fields.String(required=True, description='token')
+}
+
+
+)
