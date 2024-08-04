@@ -9,7 +9,7 @@ from flask_jwt_extended import create_access_token, get_jwt, jwt_required, get_j
 
 from config.config import mail
 from middlewares.blackList import BLACKLIST
-from models.login_model import login_model, auth_ns, reset_password_model,token_model
+from models.login_model import login_model, auth_ns, reset_password_model, token_model, googleToken_model
 from services.auth_service import AuthService
 from flask_mail import Message
 
@@ -56,7 +56,8 @@ class Login(Resource):
 
 @auth_ns.route('/continue-with-google')
 class Google(Resource):
-    @auth_ns.response(200, 'Success', token_model)
+    @auth_ns.expect(googleToken_model)
+    @auth_ns.response(200, 'Success', googleToken_model)
     @auth_ns.response(400, 'failed')
     def post(self):
         data = request.json
@@ -100,7 +101,7 @@ class Google(Resource):
         """
         return {'Allow': 'POST, OPTIONS'}, 200, {
 
-            'Access-Control-Allow-Origin': 'http://localhost:5173',
+            'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Methods': 'POST, OPTIONS',
             'Access-Control-Allow-Headers': 'Content-Type, Authorization',
             'Access-Control-Allow-Credentials': 'true'
