@@ -5,8 +5,10 @@ from flask_restx import Resource, fields
 from flask import request, jsonify
 from pymongo.results import InsertManyResult
 from werkzeug.datastructures import FileStorage
-from flask_restx.errors import abort
-# from flask import abort
+# from flask_restx.errors import abort
+from flask import abort
+from werkzeug.exceptions import NotFound
+
 
 from dal.tender_repo import DataAlreadyExistsError
 from services import tender_service
@@ -35,8 +37,13 @@ class GetAllTenders(Resource):
                     tender_service.convert_objectid_to_str(
                         tender_service.get_all(user, search_date)))
             return list_obj_tenders, 200
-        except ValueError as e:
-            namespace.abort(400, "Value error")
+        except NotFound as e:
+            error_message = {'message': str(e)}
+            print(f'except NotFound as e: {error_message}')
+            namespace.abort(404, message=f'{str(e)}')
+        except (ValueError, TypeError) as e:
+            print(f'except (ValueError, TypeError) as e: {e}')
+            namespace.abort(400, message=f'{str(e)}')
         except jwt.ExpiredSignatureError:
             namespace.abort(401, "Token has expired")
         except jwt.InvalidTokenError:

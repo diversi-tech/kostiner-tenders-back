@@ -2,23 +2,28 @@ import ast
 from datetime import datetime
 from bson import ObjectId
 import pandas as pd
+from dateutil.relativedelta import relativedelta
+from werkzeug.exceptions import NotFound
+
 from flask_restx import abort
+# from flask import abort
 
 from dal.tender_repo import tender_repo, DataAlreadyExistsError
 from services.base_service import base_service
 from services.product_service import product_service as product_service1
+
 product_service = product_service1()
 
 
 def parse_date(date):
     print(f'parse_date date: {date}')
     if not date:
-        return None
+        raise TypeError('missing data')
     try:
         return datetime.strptime(date, "%Y-%m-%d")
     except (ValueError, TypeError) as e:
         print(f'err in parse_date: {str(e)}')
-        abort(400, f'{str(e)}')
+        raise e
 
 
 class tender_service(base_service):
@@ -28,65 +33,77 @@ class tender_service(base_service):
         print('in __init__ in tender_service')
 
     def get_all(self, user, search_date):
+        list_all_tender = tender_history = tender_current = None
         role = user.get('role')
         subscription = user.get('subscriptions')
         history = user.get('purchase_history')
 
         # what can happen?
         if role not in ['admin', 'user', 'subscriber']:
+            print("if role not in ['admin', 'user', 'subscriber']:")
             raise ValueError('the user invalid')
 
         if role != 'admin' and not subscription and not history:
-            raise ValueError('no tenders for user')
+            print("if role != 'admin' and not subscription and not history:")
+            raise NotFound('no tenders for user')
+
         # subscription
-        if not subscription.get('start_date') or not subscription.get('end_date'):
-            raise ValueError('אין לך גישה למכרזים האלו')
+        if role == 'user':
+            print(subscription)
+            if subscription:
+                print(' if subscription:')
+                if not subscription.get('start_date') or not subscription.get('end_date'):
+                    print("if not subscription.get('start_date') or not subscription.get('end_date'):")
+                    raise ValueError('missing data for subscription')
 
-        # Parse subscription dates
-        try:
-            start_date = parse_date(subscription['start_date'])
-            end_date = parse_date(subscription['end_date'])
-            new_search_date = parse_date(search_date) if search_date else start_date
-        except (ValueError, TypeError):
-            print(f'error parse date')
-            raise
-        categories = subscription.get('categories')
-
-        if new_search_date and (start_date > new_search_date or new_search_date > end_date):
-            new_search_date = start_date
-        tender_current = {}
-        for category in categories:
-            tender_current[category] = []
-            print(f'tender_service get all category {category}')
-            tender_current[category] = self.repo.get_by_category(category, new_search_date, start_date, end_date)
-
-        # purchase history
-        tender_history = {}
-        if not (history and history.get('purchase_start_date') and history.get('purchase_end_date') and history.get(
-                'categories')):
-            print(f'invalid history')
-
-        else:
-            try:
-                start_date = parse_date(history['purchase_start_date'])
-                end_date = parse_date(history['purchase_end_date'])
+                # Parse subscription dates
+                start_date = parse_date(subscription['start_date'])
+                end_date = parse_date(subscription['end_date'])
                 new_search_date = parse_date(search_date) if search_date else start_date
-            except (ValueError, TypeError):
-                print(f'error parse date')
-                raise
-            print(
-                f'type(start_date): {type(start_date)}, type(end_date): {type(end_date)}, type(new_search_date): {type(new_search_date)}')
-            categories = history.get('categories')
-            if new_search_date and (start_date > new_search_date or new_search_date > end_date):
-                new_search_date = start_date
+                categories = subscription.get('categories')
 
-            for category in categories:
-                tender_history[category] = []
-                print(f'tender_service get all category {category}')
-                tender_history[category].append(
-                    self.repo.get_by_category(category, new_search_date, start_date, end_date))
-                print(f'tender_service get all tender_history: {tender_history}')
+                if new_search_date and (start_date > new_search_date or new_search_date > end_date):
+                    new_search_date = start_date
+                tender_current = {}
+                for category in categories:
+                    tender_current[category] = []
+                    print(f'tender_service get all category {category}')
+                    tender_current[category] = self.repo.get_by_category(category, new_search_date, start_date, end_date)
+
+            # purchase history
+            tender_history = {}
+            if history:
+                for purchase in history:
+                    if not (purchase and purchase.get('purchase_start_date') and purchase.get('purchase_end_date') and purchase.get(
+                            'categories')):
+                        print(f'invalid purchase')
+
+                    else:
+                        start_date = parse_date(purchase['purchase_start_date'])
+                        end_date = parse_date(purchase['purchase_end_date'])
+                        new_search_date = parse_date(search_date) if search_date else start_date
+                        print(
+                            f'type(start_date): {type(start_date)}, type(end_date): {type(end_date)}, type(new_search_date): {type(new_search_date)}')
+                        categories = purchase.get('categories')
+                        if new_search_date and (start_date > new_search_date or new_search_date > end_date):
+                            new_search_date = start_date
+
+                        for category in categories:
+                            print(f'tender_service get all category {category}')
+                            tender_history[category] = self.repo.get_by_category(category, new_search_date, start_date,
+                                                                                 end_date)
+                            # print(f' tender_service get all tender_history: {tender_history}')
         # admin
+        if role == 'admin':
+            end_date = parse_date(search_date) if search_date else datetime.now()
+            start_date = end_date - relativedelta(months=1)
+            products = product_service.get_all()
+            categories_name = [category['category'] for category in products]
+            print(f'**********tender_service get all categories_name: {categories_name}************')
+            list_all_tender = {}
+            for category in categories_name:
+                print(f'tender_service get all category {category}')
+                list_all_tender[category] = self.repo.get_by_category(category, start_date, start_date, end_date)
 
         result = {}
         if role == 'user':
@@ -94,9 +111,8 @@ class tender_service(base_service):
                 result['subscriptions'] = tender_current
             if tender_history != {}:
                 result['history'] = tender_history
-            return {'subscriptions': tender_current, }
         elif role == 'admin':
-            result = 'list_all_tender'
+            result = list_all_tender
 
         print(f'tender_service result {result}')
         return result
@@ -151,6 +167,7 @@ class tender_service(base_service):
             actual_columns = df.columns.tolist()
 
             if not all(col in actual_columns for col in expected_columns):
+                print("if not all(col in actual_columns for col in expected_columns):")
                 raise ValueError(f"{file_type.upper()} file must contain columns: {', '.join(expected_columns)}")
 
             data = df.to_dict(orient='records')
@@ -158,8 +175,12 @@ class tender_service(base_service):
 
             for row in data:
                 try:
-                    categories = row['קטגוריות'].split(',')
-                    participants = row['מציעים'].split(',')
+                    categories = row['קטגוריות'].split(', ')
+                    participants = row['מציעים'].split(', ')
+                    if isinstance(categories, str):
+                        categories = row['קטגוריות'].split(',')
+                    if isinstance(participants, str):
+                        participants = row['מציעים'].split(',')
                     tender = {
                         'tender_id': ObjectId(),
                         'body_name': row['שם הגוף'],

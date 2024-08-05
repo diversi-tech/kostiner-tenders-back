@@ -22,7 +22,6 @@ authorizations = {
 
 app = Flask(__name__)
 app.config['JWT_SECRET_KEY'] = 'chgc#sd1'  # Change to your actual secret key
-
 app.config.update(
     MAIL_SERVER='smtp.gmail.com',
     MAIL_PORT=587,

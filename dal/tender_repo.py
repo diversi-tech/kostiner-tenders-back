@@ -35,7 +35,6 @@ class tender_repo(base_repo):
             raise e
 
     def get_by_category(self, category, search_date, start_date, end_date):
-        print(f'tender_repo get_by_category category: {category}')
         query = {
             '$and': [
                 {'category': category},
@@ -50,7 +49,6 @@ class tender_repo(base_repo):
                          .find(query)
                          .sort('published_date', -1)
                          .limit(100))
-        print(f'tender_repo get_by_category query: {query}')
         result_list = list(list_category)
         return result_list
 
