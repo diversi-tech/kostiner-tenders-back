@@ -6,16 +6,19 @@ from flask_restx import abort
 
 from dal.tender_repo import tender_repo, DataAlreadyExistsError
 from services.base_service import base_service
+from services.product_service import product_service as product_service1
+product_service = product_service1()
 
 
 def parse_date(date):
+    print(f'parse_date date: {date}')
     if not date:
         return None
     try:
         return datetime.strptime(date, "%Y-%m-%d")
     except (ValueError, TypeError) as e:
         print(f'err in parse_date: {str(e)}')
-        raise e
+        abort(400, f'{str(e)}')
 
 
 class tender_service(base_service):
@@ -100,22 +103,17 @@ class tender_service(base_service):
 
     def convert_objectid_to_str(self, data):
         if isinstance(data, list):
-            print(f'==========isinstance(data, list) data: {data}')
             return [self.convert_objectid_to_str(item) for item in data]
         elif isinstance(data, dict):
-            print(f'^^^^^^^^^^^isinstance(data, dict) data: {data}')
             return {key: self.convert_objectid_to_str(value) for key, value in data.items()}
         elif isinstance(data, tuple):
-            print(f'**********isinstance(data, tuple) data: {data}')
             return tuple(self.convert_objectid_to_str(item) for item in data)
         elif isinstance(data, ObjectId):
-            print(f'---------isinstance(data, ObjectId) data: {data}')
             return str(data)
         else:
             return data
 
     def convert_datetime_to_str(self, obj):
-        print(f'******* convert_datetime_to_str(self, obj) {obj}')
         if isinstance(obj, datetime):
             return obj.isoformat()
         elif isinstance(obj, dict):
@@ -133,6 +131,7 @@ class tender_service(base_service):
         return self._insert_from_file(file, 'excel')
 
     def _insert_from_file(self, file, file_type):
+        df = None
         print('tender service insert_from_file')
         result = []
         try:

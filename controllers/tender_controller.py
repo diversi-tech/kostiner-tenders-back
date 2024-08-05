@@ -34,8 +34,6 @@ class GetAllTenders(Resource):
                 tender_service.convert_datetime_to_str(
                     tender_service.convert_objectid_to_str(
                         tender_service.get_all(user, search_date)))
-            print(f'type(list_obj_tenders): {type(list_obj_tenders)}')
-            print(f'list_obj_tenders: {list_obj_tenders}')
             return list_obj_tenders, 200
         except ValueError as e:
             namespace.abort(400, "Value error")
