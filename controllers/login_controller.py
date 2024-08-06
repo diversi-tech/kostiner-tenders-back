@@ -1,5 +1,3 @@
-from datetime import timedelta
-
 import jwt
 import requests
 from bson import ObjectId, json_util
@@ -12,7 +10,7 @@ from flask_jwt_extended import create_access_token, get_jwt, jwt_required, get_j
 from config import settings
 from config.config import mail
 from middlewares.blackList import BLACKLIST
-from models.login_model import login_model, auth_ns, reset_password_model,token_model,contact_model as c
+from models.login_model import login_model, auth_ns, reset_password_model,token_model,contact_model as c, googleToken_model
 from services.auth_service import AuthService
 from flask_mail import Message
 
@@ -22,14 +20,17 @@ def serialize_user(user):
     """Convert ObjectId instances in a user dictionary to strings."""
     if isinstance(user, tuple) and len(user) > 0 and isinstance(user[0], dict):
         user_data = user[0]
+        # Remove password field if it exists
         user_data.pop('password', None)
         serialized_user = json.loads(json_util.dumps(user_data, default=str))
         return serialized_user
     elif isinstance(user, dict):
+        # Remove password field if it exists
         user.pop('password', None)
         serialized_user = json.loads(json_util.dumps(user, default=str))
         return serialized_user
     return None
+
 
 @auth_ns.route('/login')
 class Login(Resource):
@@ -67,26 +68,17 @@ class RefreshToken(Resource):
         new_refresh_token = create_refresh_token(identity=identity)
         return jsonify(newToken=new_access_token, newRefreshToken=new_refresh_token)
 
-#
-# @auth_ns.route('/refresh')
-# class RefreshToken(Resource):
-#     @auth_ns.response(200, 'Success', token_model)
-#     @auth_ns.response(401, 'Unauthorized')
-#     @jwt_required(refresh=True)
-#     def post(self):
-#         current_user = get_jwt_identity()
-#         additional_claims = get_jwt()
-#         new_access_token = create_access_token(identity=current_user, additional_claims=additional_claims)
-#         return {'access_token': 'Bearer ' + new_access_token}, 200
 
 @auth_ns.route('/continue-with-google')
 class Google(Resource):
-    @auth_ns.response(200, 'Success', token_model)
+    @auth_ns.expect(googleToken_model)
+    @auth_ns.response(200, 'Success', googleToken_model)
     @auth_ns.response(400, 'failed')
     def post(self):
         data = request.json
         token = data['token']
 
+        # אימות אסימון ההתחברות של גוגל
         response = requests.get(
             f'https://oauth2.googleapis.com/tokeninfo?id_token={token}')
         print(response)
@@ -107,6 +99,7 @@ class Google(Resource):
             access_token = create_access_token(identity=user['role'], additional_claims=additional_claims)
             return {'access_token': 'Bearer ' + access_token}, 200
 
+        # הוספת המשתמש למסד הנתונים
         user = auth_service.create_user(name, email)
         print(f'user = {user}')
         additional_claims = {
@@ -123,7 +116,7 @@ class Google(Resource):
         """
         return {'Allow': 'POST, OPTIONS'}, 200, {
 
-            'Access-Control-Allow-Origin': 'http://localhost:5173',
+            'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Methods': 'POST, OPTIONS',
             'Access-Control-Allow-Headers': 'Content-Type, Authorization',
             'Access-Control-Allow-Credentials': 'true'
@@ -165,6 +158,7 @@ class PasswordResetRequest(Resource):
         except Exception as e:
             print(f'Failed to send email: {e}')
             return {'message': f'Failed to send email: {str(e)}'}, 500
+        print(token)
         return token
 
 
@@ -205,6 +199,26 @@ class PasswordResetResponse(Resource):
 @auth_ns.route('/logout')
 class Logout(Resource):
     @jwt_required()
+    def options(self):
+        origin = request.headers.get('Origin')
+        allowed_origins = ["https://kostiner-tenders.onrender.com", "http://localhost:5174","http://localhost:5173"]
+
+        if origin in allowed_origins:
+            return {'Allow': 'POST, OPTIONS'}, 200, {
+                'Access-Control-Allow-Origin': origin,
+                'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                'Access-Control-Allow-Credentials': 'true'
+            }
+        else:
+            return {'Allow': 'POST, OPTIONS'}, 403, {
+                'Access-Control-Allow-Origin': 'null',
+                'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                'Access-Control-Allow-Credentials': 'true'
+            }
+
+    @jwt_required()
     def post(self):
         jti = get_jwt()['jti']
         try:
@@ -213,54 +227,12 @@ class Logout(Resource):
             return {'message': 'Logged out successfully'}, 200
         except Exception as e:
             return jsonify({"msg": "Logout failed"}), 500
-    @jwt_required()
-    def options(self):
-        allowed_origins = [
-            "http://localhost:5174",
-            "http://localhost:5173",
-            "https://kostiner-tenders.onrender.com"
-        ]
-        origin = request.headers.get('Origin')
-        response = jsonify({})
-        if origin in allowed_origins:
-            response.headers['Access-Control-Allow-Origin'] = origin
-        response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
-        return response
 
-
-# @auth_ns.route('/contact')
-# class Connect(Resource):
-#     @auth_ns.expect(c)
-#     @auth_ns.response(200, 'Success', token_model)
-#     @auth_ns.response(401, 'Unauthorized')
-#     @jwt_required()
-#     def post(self):
-#         data = request.json
-#         first_name = data.get('first_name')
-#         last_name = data.get('last_name')
-#         email = data.get('email')
-#         phone = data.get('phone')
-#         message_content = data.get('message')
-#
-#         try:
-#             msg = Message('Contact Form Submission', sender=email, recipients=[config['MAIL_USERNAME']])
-#             msg.body = f'Name: {first_name} {last_name}\nEmail: {email}\nPhone: {phone}\nMessage: {message_content}'
-#             mail.send(msg)
-#
-#             user_msg = Message('Thank you for contacting us', sender=config['MAIL_USERNAME'], recipients=[email])
-#             user_msg.body = 'Thank you for reaching out to us. We have received your message and will get back to you soon.'
-#             mail.send(user_msg)
-#
-#             return jsonify({'message': 'Message sent successfully'}), 200
-#         except Exception as e:
-#             return jsonify({'message': f'An error occurred: {str(e)}'}), 500
 @auth_ns.route('/contact')
 class Connect(Resource):
         @auth_ns.expect(c)
         @auth_ns.response(200, 'Success')
         @auth_ns.response(401, 'Unauthorized')
-        # @jwt_required()
         def post(self):
             data = request.json
             first_name = data.get('first_name')

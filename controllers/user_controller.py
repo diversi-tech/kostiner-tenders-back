@@ -1,3 +1,5 @@
+from bson import ObjectId
+from bson.errors import InvalidId
 from flask_jwt_extended import jwt_required
 from flask_restx import Resource, abort
 from flask import request
@@ -13,6 +15,10 @@ class GetAllUsers(Resource):
     def get(self):
         '''get all users'''
         print(f'user controller get')
+        users = user_service.get_all()
+        for user in users:
+            user_service.validate_user(user)
+            continue
         return user_service.get_all()
 
 
@@ -24,19 +30,33 @@ class GetUserById(Resource):
     @namespace.marshal_with(user_data_model)
     def get(self, user_id):
         '''get user by Id'''
+        try:
+            ObjectId(user_id)
+        except InvalidId:
+            abort(400, "The entered value is not of type ObjectId")
         user = user_service.get_by_id(user_id)
         if user:
+            user_service.validate_user(user)
             return user
         namespace.abort(404, f"user {user_id} doesn't exist")
-    def options(self):
-        """
-        Handle OPTIONS requests for CORS.
-        """
-        return {'Allow': 'POST, OPTIONS, GET'}, 200, {
-            'Access-Control-Allow-Origin': 'http://localhost:5173',
-            'Access-Control-Allow-Methods': 'POST, OPTIONS, GET',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        }
+    def options(self,user_id):
+        origin = request.headers.get('Origin')
+        allowed_origins = ["https://kostiner-tenders.onrender.com", "http://localhost:5174", "http://localhost:5173"]
+
+        if origin in allowed_origins:
+            return {'Allow': 'POST, OPTIONS'}, 200, {
+                'Access-Control-Allow-Origin': origin,
+                'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                'Access-Control-Allow-Credentials': 'true'
+            }
+        else:
+            return {'Allow': 'POST, OPTIONS'}, 403, {
+                'Access-Control-Allow-Origin': 'null',
+                'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                'Access-Control-Allow-Credentials': 'true'
+            }
 
 
 @namespace.route('/post-user')
@@ -47,32 +67,9 @@ class PostUser(Resource):
     def post(self):
         '''create a new user'''
         new_user = request.json
-        user_service.validate_user(new_user)
-
-
-        # # Custom validation for date fields
-        # date_fields = ['purchase_date', 'start_date', 'end_date']
-        #
-        # for field in date_fields:
-        #     if field in new_user:
-        #         if not user_service.validate_date(new_user[field]):
-        #             abort(400, f"{field} must be in the format YYYY-MM-DD.")
-        #
-        # if 'purchase_history' in new_user:
-        #     for item in new_user['purchase_history']:
-        #         for field in ['purchase_date']:
-        #             if field in item:
-        #                 if not user_service.validate_date(item[field]):
-        #                     abort(400, f"purchase_history item field {field} must be in the format YYYY-MM-DD.")
-        #
-        # if 'subscriptions' in new_user:
-        #     for field in ['start_date', 'end_date']:
-        #         if field in new_user['subscriptions']:
-        #             if not user_service.validate_date(new_user['subscriptions'][field]):
-        #                 abort(400, f"subscriptions field {field} must be in the format YYYY-MM-DD.")
-
         print(f'user controller new_user: {new_user}')
         result = user_service.create(new_user)
+        user_service.validate_user(result)
         return result, 201
 
 
@@ -90,9 +87,13 @@ class PutUserById(Resource):
             if result.modified_count > 0:
                 updated_user = user_service.get_by_id(user_id)
                 return updated_user
+            else:
+                abort(404, f"user {user_id} doesn't exist")
         except ValueError as e:
             abort(400, str(e))
-        namespace.abort(404, f"user {user_id} doesn't exist")
+        except Exception as e:
+            print(f'user controller put type(e) {type(e)}')
+
 
 
 @namespace.route('/delete-user/<string:user_id>')
