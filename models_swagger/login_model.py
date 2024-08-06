@@ -19,10 +19,6 @@ token_model = auth_ns.model('Token', {
     'new_password': fields.String(required=True, description='New password'),
 })
 
-# reset_password_model = auth_ns.model('ResetPassword', {
-#     'email': fields.String(required=True, description='User email'),
-#     'new_password': fields.String(required=True, description='New password'),
-# })
 reset_password_verify_model = {
     'identifier': str(uuid.uuid4()),  # Unique identifier for the reset request
     'email': 'user@example.com',  # User's email address
@@ -34,4 +30,12 @@ reset_password_verify_model = {
 reset_password_model = auth_ns.model('ResetPassword', {
     'email': fields.String(required=True, description='User email address'),
     'username':fields.String(requests=True, desctiption='username')
+})
+
+contact_model = auth_ns.model('Contact', {
+    'first_name': fields.String(required=True, description='First name'),
+    'last_name': fields.String(required=True, description='Last name'),
+    'email': fields.String(required=True, description='Email address'),
+    'phone': fields.String(required=True, description='Phone number'),
+    'message': fields.String(required=True, description='Message content')
 })

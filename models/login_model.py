@@ -24,3 +24,11 @@ reset_password_model = auth_ns.model('ResetPassword', {
     'email': fields.String(required=True, description='User email address'),
     'username':fields.String(requests=True, desctiption='username')
 })
+
+contact_model = auth_ns.model('Contact', {
+    'first_name': fields.String(required=True, description='first name of user'),
+    'last_name': fields.String(required=True, description='last name of user'),
+    'email': fields.String(required=True, description='email of user'),
+    'phone': fields.Float(required=True, description='phone of user'),
+    'message': fields.String(required=True, description='message of user')
+})

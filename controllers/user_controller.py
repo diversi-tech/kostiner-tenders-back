@@ -28,7 +28,7 @@ class GetUserById(Resource):
         if user:
             return user
         namespace.abort(404, f"user {user_id} doesn't exist")
-    def options(self,user_id):
+    def options(self):
         """
         Handle OPTIONS requests for CORS.
         """
