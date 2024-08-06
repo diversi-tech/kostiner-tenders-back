@@ -39,7 +39,8 @@ class GetUserById(Resource):
             user_service.validate_user(user)
             return user
         namespace.abort(404, f"user {user_id} doesn't exist")
-    def options(self,user_id):
+
+    def options(self, user_id):
         origin = request.headers.get('Origin')
         allowed_origins = ["https://kostiner-tenders.onrender.com", "http://localhost:5174", "http://localhost:5173"]
 

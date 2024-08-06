@@ -22,9 +22,9 @@ class user_service(base_service):
         if 'subscriptions' in data and data['subscriptions']['plan_type'] == 'Subscription':
             data['subscriptions']['end_date'] = str(datetime.strptime(data['subscriptions']['start_date'],
                                                                   '%Y-%m-%d').date() + relativedelta(years=1))
-        if 'subscriptions' in data and data['subscriptions']['plan_type'] == 'Monthly report':
+        if 'subscriptions' in data and data['subscriptions']['plan_type'] == 'One-time category':
             data['subscriptions']['end_date'] = str(datetime.strptime(data['subscriptions']['start_date'],
-                                                                  '%Y-%m-%d').date() + relativedelta(months=1))
+                                                                      '%Y-%m-%d').date() + relativedelta(months=1))
         if 'subscriptions' in data and data['subscriptions']['plan_type'] == 'One-time report':
             data['subscriptions']['end_date'] = str(
                 datetime.strptime(data['subscriptions']['start_date'], '%Y-%m-%d').date() + relativedelta(days=1))
@@ -56,13 +56,15 @@ class user_service(base_service):
                 for field in ['purchase_date']:
                     if field in item:
                         if not self.validate_date(item[field]):
-                            abort(400, f"purchase_history item field '{field}' must be in the format YYYY-MM-DD.  id: {user['user_id']} user: {user['first_name']}")
+                            abort(400,
+                                  f"purchase_history item field '{field}' must be in the format YYYY-MM-DD.  id: {user['user_id']} user: {user['first_name']}")
 
         if 'subscriptions' in user and user['subscriptions'] is not None:
             for field in ['start_date', 'end_date']:
                 if field in user['subscriptions']:
                     if not self.validate_date(user['subscriptions'][field]):
-                        abort(400, f"subscriptions field '{field}' must be in the format YYYY-MM-DD. user:  id: {user['user_id']} {user['first_name']}")
+                        abort(400,
+                              f"subscriptions field '{field}' must be in the format YYYY-MM-DD. user:  id: {user['user_id']} {user['first_name']}")
 
 
 logging.basicConfig(level=logging.INFO)
