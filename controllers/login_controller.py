@@ -57,7 +57,7 @@ class Login(Resource):
                 'refresh_token': f'Bearer {refresh_token}'
             }, 200
         else:
-            return jsonify({'message': 'Invalid credentials'}), 401
+            return {'message': 'Invalid credentials'}, 401
 @auth_ns.route('/refresh-token')
 class RefreshToken(Resource):
     @jwt_required(refresh=True)
