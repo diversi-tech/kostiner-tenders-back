@@ -1,3 +1,5 @@
+from flask_restx import abort
+
 from dal.product_repo import  product_repo
 from services.base_service import base_service
 

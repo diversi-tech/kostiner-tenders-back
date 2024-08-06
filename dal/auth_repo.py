@@ -5,7 +5,6 @@ import requests
 from bson import ObjectId
 from werkzeug.security import generate_password_hash
 from datetime import datetime, timedelta
-from config.config import db
 from dal.base_repo import base_repo
 
 from dal.createDB.connectDB import connect_to_mongodb

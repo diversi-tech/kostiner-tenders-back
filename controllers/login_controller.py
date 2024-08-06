@@ -5,11 +5,12 @@ import json
 import os
 from flask_restx import Resource
 from flask import request, jsonify, make_response
-from flask_jwt_extended import create_access_token, get_jwt, jwt_required, get_jwt_identity
+from flask_jwt_extended import create_access_token, get_jwt, jwt_required, get_jwt_identity, create_refresh_token
 
+from config import settings
 from config.config import mail
 from middlewares.blackList import BLACKLIST
-from models.login_model import login_model, auth_ns, reset_password_model, token_model, googleToken_model
+from models.login_model import login_model, auth_ns, reset_password_model,token_model,contact_model as c, googleToken_model
 from services.auth_service import AuthService
 from flask_mail import Message
 
@@ -49,9 +50,23 @@ class Login(Resource):
                 'user_id': user_id
             }
             access_token = create_access_token(identity=user_role, additional_claims=additional_claims)
-            return {'access_token': 'Bearer ' + access_token}, 200
+            refresh_token = create_refresh_token(identity=user_role, additional_claims=additional_claims)
+
+            return {
+                'access_token': access_token,
+                'refresh_token': refresh_token
+            }, 200
         else:
             return jsonify({'message': 'Invalid credentials'}), 401
+@auth_ns.route('/refresh-token')
+class RefreshToken(Resource):
+    @jwt_required(refresh=True)
+    def post(self):
+        print("refresh-token")
+        identity = get_jwt_identity()
+        new_access_token = create_access_token(identity=identity)
+        new_refresh_token = create_refresh_token(identity=identity)
+        return jsonify(newToken=new_access_token, newRefreshToken=new_refresh_token)
 
 
 @auth_ns.route('/continue-with-google')
@@ -213,5 +228,42 @@ class Logout(Resource):
         except Exception as e:
             return jsonify({"msg": "Logout failed"}), 500
 
+@auth_ns.route('/contact')
+class Connect(Resource):
+        @auth_ns.expect(c)
+        @auth_ns.response(200, 'Success')
+        @auth_ns.response(401, 'Unauthorized')
+        def post(self):
+            data = request.json
+            first_name = data.get('first_name')
+            last_name = data.get('last_name')
+            email = data.get('email')
+            phone = data.get('phone')
+            message_content = data.get('message')
 
+            try:
+                msg = Message('שליחת טופס יצירת קשר', sender=email, recipients=[settings.Config.MAIL_USERNAME])
+                msg.body = f'Name: {first_name} {last_name}\nEmail: {email}\nPhone: {phone}\nMessage: {message_content}'
+                mail.send(msg)
 
+                user_msg = Message('תודה שפנית אלינו', sender=settings.Config.MAIL_USERNAME, recipients=[email])
+                user_msg.body = 'תודה שפנית אלינו. קיבלנו את הודעתך ונחזור אליך בהקדם.'
+                mail.send(user_msg)
+
+                return {'message': 'ההודעה נשלחה בהצלחה'}, 200
+            except Exception as e:
+                return {'message': f'An error occurred: {str(e)}'}, 500
+
+        def options(self):
+            allowed_origins = [
+                "http://localhost:5174",
+                "http://localhost:5173",
+                "https://kostiner-tenders.onrender.com"
+            ]
+            origin = request.headers.get('Origin')
+            response = jsonify({})
+            if origin in allowed_origins:
+                response.headers['Access-Control-Allow-Origin'] = origin
+            response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+            response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+            return response
