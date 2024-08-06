@@ -58,6 +58,7 @@ class base_repo:
             return None
 
     def insert(self, data):
+        print(f'in base_repo insert')
         try:
             data[self.get_obj_id()] = ObjectId()
             result = self.collection.insert_one(data)

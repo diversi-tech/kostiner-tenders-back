@@ -42,6 +42,23 @@ class GetAllTenders(Resource):
             abort(400, str(e))
 
 
+@namespace.route('/get-id-by-name/<string:tender_name>')
+@namespace.response(404, 'tender not found')
+class GetIdByName(Resource):
+    @namespace.doc('get_id_tender_by_name')
+    def get(self, tender_name):
+        '''get id tender by name'''
+        try:
+            tender_id = tender_service.get_id_by_name(tender_name)
+            return {'tender_id': tender_id}, 200
+        except ValueError as ve:
+            namespace.abort(404, str(ve))
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            namespace.abort(400, "An unexpected error occurred")
+
+
+
 @namespace.route('/get-id-tender/<string:tender_id>')
 @namespace.response(404, 'tender not found')
 class GetTenderById(Resource):
@@ -181,8 +198,10 @@ class TenderSearch(Resource):
 
 
 namespace.add_resource(TenderSearch, '/search')
+namespace.add_resource(GetIdByName, '/get-id-by-name/<string:tender_name>')
 namespace.add_resource(GetAllTenders, '/get-all-tenders')
 namespace.add_resource(GetTenderById, '/get-id-tender/<string:tender_id>')
 namespace.add_resource(CSVUpload, '/post-upload-csv')
 namespace.add_resource(PutTenderById, '/update-tender/<string:tender_id>')
 namespace.add_resource(DeleteTenderById, '/delete-tender/<string:tender_id>')
+
