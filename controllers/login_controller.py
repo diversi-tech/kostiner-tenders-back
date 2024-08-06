@@ -53,8 +53,8 @@ class Login(Resource):
             refresh_token = create_refresh_token(identity=user_role, additional_claims=additional_claims)
 
             return {
-                'access_token': access_token,
-                'refresh_token': refresh_token
+                'access_token': f'Bearer {access_token}',
+                'refresh_token': f'Bearer {refresh_token}'
             }, 200
         else:
             return jsonify({'message': 'Invalid credentials'}), 401
@@ -138,7 +138,7 @@ class PasswordResetRequest(Resource):
 
         # Generate a reset token and identifier
         token = auth_service.generate_reset_token(email, username)
-        reset_link = f"https://kostiner-tenders.onrender.com/resetPasword"  # Use the identifier in the reset link
+        reset_link = f"https://kostiner-tenders.onrender.com/#/resetPasword"  # Use the identifier in the reset link
         msg = Message('Password Reset Request', recipients=[email])
         msg.html = f"""
         <html>
