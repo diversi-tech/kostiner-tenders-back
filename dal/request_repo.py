@@ -1,20 +1,18 @@
-from idlelib.iomenu import errors
-
 from bson import ObjectId
-
+from bson.errors import InvalidId
+from pymongo.errors import PyMongoError
 from models.request import Request
-
 from dal.base_repo import base_repo
+
 class request_repo(base_repo):
     def __init__(self):
-        super().__init__('Kostiner','requests')
+        super().__init__('Kostiner', 'requests')
         print('in __init__ in request_repo')
 
     def get_obj_id(self):
         return 'request_id'
 
-
-    def get_all_users_request(self ,user_id):
+    def get_all_users_request(self, user_id):
         result = self.collection.find({'userID': user_id})
         return list(result)
 
@@ -54,23 +52,12 @@ class request_repo(base_repo):
                 return True
 
             return False
-        except errors.InvalidId as e:
+        except InvalidId as e:
             print(f"Invalid ID: {e}")
             return None
-        except errors.PyMongoError as e:
+        except PyMongoError as e:
             print(f"An error occurred: {e}")
             return None
         except Exception as e:
             print(f"Unexpected error: {e}")
             return None
-
-
-
-
-
-
-
-
-
-
-
