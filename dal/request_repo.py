@@ -30,6 +30,7 @@ class request_repo(base_repo):
                 approved=request_data.get('approved'),
                 date=request_data.get('date'),
                 userID=request_data.get('userID'),
+                tender_name=request_data.get('tender_name'),
                 tender_id=request_data.get('tender_id')
             )
             unapproved_requests.append(request)
