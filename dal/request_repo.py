@@ -2,8 +2,6 @@ from idlelib.iomenu import errors
 
 from bson import ObjectId
 
-#from pymongo import errors
-
 from models.request import Request
 
 from dal.base_repo import base_repo
