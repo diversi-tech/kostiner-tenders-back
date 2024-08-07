@@ -35,29 +35,15 @@
 import certifi
 from flask_mail import Mail
 from pymongo import MongoClient
+import os
 
 mail = Mail()
 ca = certifi.where()
-try:
+class Config:
+    MAIL_SERVER = 'smtp.gmail.com'
+    MAIL_PORT = 587
+    MAIL_USE_TLS = True
+    MAIL_USE_SSL = False
+    MAIL_USERNAME = os.getenv('kustiner1@gmail.com')
+    MAIL_PASSWORD = os.getenv('i a u m z l p a q x r b d v s d')
 
-
-  MONGO_URI = 'mongodb+srv://sh485014:s3273805@sara.kjxve7r.mongodb.net/'
-
-  client = MongoClient(MONGO_URI, tls=True,tlsAllowInvalidCertificates=True,tlsCAFile=ca)
-
-  db = client['item']
-  collection = db['item']
-  # print("Connected to MongoDB")
-  result = collection.find_one({})
-  # print(result)
-except Exception as e:
-    print("Error: ", e)
-try:
-
-    users_collection = db['users']
-
-    # print("Connected to MongoDB")
-    result = users_collection.find_one({})
-    # print(result)
-except Exception as e:
-    print("Error: ", e)

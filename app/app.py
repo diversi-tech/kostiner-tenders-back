@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, verify_jwt_in_request
@@ -13,7 +15,6 @@ from controllers.payment_controller import nameSpace_payment
 from config.config import mail
 from middlewares.blackList import check_if_token_in_blacklist
 
-
 authorizations = {
     'jwt': {
         'type': 'apiKey',
@@ -24,6 +25,8 @@ authorizations = {
 
 app = Flask(__name__)
 app.config['JWT_SECRET_KEY'] = 'chgc#sd1'  # Change to your actual secret key
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=3)
+app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=3650)
 
 app.config.update(
     MAIL_SERVER='smtp.gmail.com',
@@ -39,6 +42,8 @@ app.config['JWT_TOKEN_LOCATION'] = ['headers']
 mail.init_app(app)
 jwt = JWTManager(app)
 app.before_request(before_request_middleware())
+
+
 @jwt.token_in_blocklist_loader
 def check_if_token_in_blacklist_callback(jwt_header, jwt_payload):
     return check_if_token_in_blacklist(jwt_header, jwt_payload)
@@ -46,13 +51,10 @@ def check_if_token_in_blacklist_callback(jwt_header, jwt_payload):
 # app.before_request(before_request_middleware())
 
 # CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://localhost:5174"}})
-CORS(app, supports_credentials=True, resources={r"/*": {"origins": ["https://kostiner-tenders.onrender.com", "http://localhost:5174","http://localhost:5173"]}})
-
-
-api = Api()
-
-
-api = Api(app, version='1.0', title='Kostiner Tender Records', description='Information from the world of auctions', authorizations=authorizations, security='jwt')
+CORS(app, supports_credentials=True, resources={
+    r"/*": {"origins": ["https://kostiner-tenders.onrender.com", "http://localhost:5174", "http://localhost:5173"]}})
+api = Api(app, version='1.0', title='Kostiner Tender Records', description='Information from the world of auctions',
+          authorizations=authorizations, security='jwt')
 
 api.add_namespace(namespace_user)
 api.add_namespace(namespace_tender)

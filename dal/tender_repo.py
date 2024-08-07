@@ -1,7 +1,10 @@
+from datetime import datetime
+
 from bson import ObjectId
 from pymongo import errors
 
 from dal.base_repo import base_repo
+
 
 class tender_repo(base_repo):
     def __init__(self):
@@ -10,8 +13,9 @@ class tender_repo(base_repo):
 
     def get_obj_id(self):
         return 'tender_id'
+
     def get_name_string(self):
-            return 'tender_name'
+        return 'tender_name'
 
     def get_id_by_name(self, name):
         print(f'tender_repo get_id_by_name')
@@ -43,25 +47,24 @@ class tender_repo(base_repo):
         except Exception as e:
             print(f"Unexpected error: {e}")
             raise e
-    def get_by_category(self, category, search_date, start_date, end_date):
-            print(f'tender_repo get_by_category category: {category}')
-            query = {
-                '$and': [
-                    {'category': category},
-                    {'published_date': {'$gte': start_date}},
-                    {'published_date': {'$lte': end_date}}
-                ]
-            }
-            if search_date > start_date:
-                query['$and'].append({'published_date': {'$lte': search_date}})
-                print(query['$and'][3])
-            list_category = (self.collection
-                             .find(query)
-                             .sort('published_date', -1)
-                             .limit(100))
-            result_list = list(list_category)
-            return result_list
 
+    def get_by_category(self, category, search_date, start_date, end_date):
+        query = {
+            '$and': [
+                {'category': category},
+                {'published_date': {'$gte': start_date}},
+                {'published_date': {'$lte': end_date}}
+            ]
+        }
+        if search_date > start_date:
+            query['$and'].append({'published_date': {'$lte': search_date}})
+            print(query['$and'][3])
+        list_category = (self.collection
+                         .find(query)
+                         .sort('published_date', -1)
+                         .limit(100))
+        result_list = list(list_category)
+        return result_list
 
     def search(self, criteria):
         print(f"Search criteria: {criteria}")
@@ -98,8 +101,11 @@ class tender_repo(base_repo):
             query['estimate'] = criteria['estimate']
 
         return query
+
+
 class DataAlreadyExistsError(Exception):
     """Exception raised when data already exists in the database."""
+
     def __init__(self, code=400, details="Data already exists in the database"):
         self.code = code
         self.details = details

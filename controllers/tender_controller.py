@@ -1,10 +1,14 @@
 from datetime import datetime
 import jwt
 from flask_jwt_extended import verify_jwt_in_request, jwt_required
-from flask_restx import Resource, abort, fields
-from flask import request
+from flask_restx import Resource, fields
+from flask import request, jsonify
 from pymongo.results import InsertManyResult
 from werkzeug.datastructures import FileStorage
+# from flask_restx.errors import abort
+from flask import abort
+from werkzeug.exceptions import NotFound
+
 
 from dal.tender_repo import DataAlreadyExistsError
 from services import tender_service
@@ -17,7 +21,6 @@ class GetAllTenders(Resource):
     @namespace.doc(params={
         'search date': 'search date of the range (format: YYYY-MM-DD)'
     })
-    @namespace.marshal_list_with(tender_model)
     @namespace.response(401, 'Invalid token')
     @namespace.response(400, 'Invalid date')
     @jwt_required()
@@ -29,17 +32,25 @@ class GetAllTenders(Resource):
             user = user_service.get_by_id(user_id)
             search_date = request.args.get('search date')
             print(f'tender controller search date: {search_date}')
-            list_array = tender_service.get_all(user, search_date)
-            return list_array, 200
-        except ValueError as e:
-            abort(400, str(e))
+            list_obj_tenders = \
+                tender_service.convert_datetime_to_str(
+                    tender_service.convert_objectid_to_str(
+                        tender_service.get_all(user, search_date)))
+            return list_obj_tenders, 200
+        except NotFound as e:
+            error_message = {'message': str(e)}
+            print(f'except NotFound as e: {error_message}')
+            namespace.abort(404, message=f'{str(e)}')
+        except (ValueError, TypeError) as e:
+            print(f'except (ValueError, TypeError) as e: {e}')
+            namespace.abort(400, message=f'{str(e)}')
         except jwt.ExpiredSignatureError:
-            abort(401, "Token has expired")
+            namespace.abort(401, "Token has expired")
         except jwt.InvalidTokenError:
-            abort(401, "Invalid token")
+            namespace.abort(401, "Invalid token")
         except Exception as e:
             print(f'tender controller Exception msg: {e}')
-            abort(400, str(e))
+            namespace.abort(400, str(e))
 
 
 @namespace.route('/get-id-by-name/<string:tender_name>')
@@ -138,6 +149,7 @@ class DeleteTenderById(Resource):
             return 'The tender deleted successfully'
         namespace.abort(404, f"tender {tender_id} doesn't exist")
 
+
 @namespace.route('/search')
 class TenderSearch(Resource):
     @namespace.doc('search_tender')
@@ -194,7 +206,6 @@ class TenderSearch(Resource):
         except Exception as e:
             print(f'tender controller Exception msg: {e}')
             abort(400, str(e))
-
 
 
 namespace.add_resource(TenderSearch, '/search')

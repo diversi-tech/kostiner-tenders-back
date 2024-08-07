@@ -27,16 +27,12 @@ class base_repo:
             print(f'base_repo get')
             return list(self.collection.find())
         except errors.PyMongoError as e:
-            print(f"An error occurred: {e}")
             return []
 
     def get_by_id(self, object_id):
-        print(f'base repo get_by_id object_id: {object_id}')
         try:
             obj_id = self.get_obj_id()
-            print(f'base repo get_by_id obj_id: {obj_id}, collection: {self.collection.name}')
             result = self.collection.find_one({obj_id: ObjectId(object_id)})
-            print(f'base repo get_by_id result: {result}')
             return result
 
         except errors.InvalidId as e:
