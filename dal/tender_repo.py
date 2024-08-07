@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from bson import ObjectId
+from pymongo import errors
 
 from dal.base_repo import base_repo
 
@@ -15,6 +16,19 @@ class tender_repo(base_repo):
 
     def get_name_string(self):
         return 'tender_name'
+
+    def get_id_by_name(self, name):
+        print(f'tender_repo get_id_by_name')
+        try:
+            result = self.collection.find_one({'body_name': name}, sort=[('published_date', -1)])
+            if result is None:
+                raise ValueError(f"לא קיים מכרז עם השם {name}")
+            result['tender_id'] = str(result['tender_id'])
+            tender_id = result['tender_id']
+            return tender_id
+        except errors.PyMongoError as e:
+            print(f"An error occurred: {e}")
+            raise ValueError(f"שגיאה בחיבור ל-MongoDB: {e}")
 
     def insert_csv(self, data):
         print(f'tender_repo insert: len(data):{len(data)}')

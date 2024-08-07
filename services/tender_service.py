@@ -32,6 +32,11 @@ class tender_service(base_service):
         super().__init__(self.repo)
         print('in __init__ in tender_service')
 
+    def get_id_by_name(self, tender_name):
+        print(f'tender service get id by name')
+        return self.repo.get_id_by_name(tender_name)
+
+
     def get_all(self, user, search_date):
         list_all_tender = tender_history = tender_current = None
         role = user.get('role')

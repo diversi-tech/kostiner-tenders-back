@@ -6,6 +6,7 @@ from flask_jwt_extended import JWTManager, verify_jwt_in_request
 from flask_restx import Api
 
 from middlewares.authorization_middleware import before_request_middleware
+from controllers.request_controller import namespace as namespace_request
 from controllers.login_controller import auth_ns
 from controllers.user_controller import namespace as namespace_user
 from controllers.tender_controller import namespace as namespace_tender
@@ -60,6 +61,7 @@ api.add_namespace(namespace_tender)
 api.add_namespace(auth_ns, path='/auth')
 api.add_namespace(namespace_product)
 api.add_namespace(nameSpace_payment)
+api.add_namespace(namespace_request)
 # api.add_namespace(namespace_user, path='/users')
 
 
