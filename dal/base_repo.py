@@ -25,10 +25,15 @@ class base_repo:
     def get(self):
         try:
             print(f'base_repo get')
-            return list(self.collection.find())
+            base_list = list(self.collection.find())
+            # print(f'base_list, {base_list}')
+
+            return base_list
         except errors.PyMongoError as e:
             print(f"An error occurred: {e}")
             return []
+
+
 
     def get_by_id(self, object_id):
         print(f'base repo get_by_id object_id: {object_id}')

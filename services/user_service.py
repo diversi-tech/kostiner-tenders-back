@@ -15,13 +15,13 @@ class user_service(base_service):
 
     def create(self, data):
         print(f'user_service create')
-        if data['subscriptions']['plan-type'] == 'Subscription':
+        if data['subscriptions']['plan_type'] == 'Subscription':
             data['subscriptions']['end_date'] = datetime.strptime(data['subscriptions']['start_date'],
                                                                   '%Y-%m-%d') + relativedelta(years=1)
-        if data['subscriptions']['plan-type'] == 'Monthly report':
+        if data['subscriptions']['plan_type'] == 'Monthly report':
             data['subscriptions']['end_date'] = datetime.strptime(data['subscriptions']['start_date'],
                                                                   '%Y-%m-%d') + relativedelta(months=1)
-        if data['subscriptions']['plan-type'] == 'One-time report':
+        if data['subscriptions']['plan_type'] == 'One-time report':
             data['subscriptions']['end_date'] = str(
                 datetime.strptime(data['subscriptions']['start_date'], '%Y-%m-%d') + relativedelta(days=1))
         return super().create(data)
