@@ -7,20 +7,45 @@ from services import user_service
 from models_swagger.user_model import nameSpace_user as namespace, user_data_model
 
 
+
+
+
 @namespace.route('/get-all-users')
 class GetAllUsers(Resource):
     @namespace.doc('list_user')
-    @namespace.marshal_list_with(user_data_model)
+    # @namespace.marshal_list_with(user_data_model)
     @jwt_required()
     def get(self):
         '''get all users'''
         print(f'user controller get')
-        users = user_service.get_all()
-        for user in users:
-            user_service.validate_user(user)
-            continue
-        return user_service.get_all()
 
+        users_list = user_service.get_all()
+
+        # Helper function to convert ObjectId to string and remove _id field
+        def process_user(user):
+            # Remove _id field
+            if '_id' in user:
+                del user['_id']
+            # Convert ObjectId fields to strings
+            for key, value in user.items():
+                if isinstance(value, ObjectId):
+                    user[key] = str(value)
+                elif isinstance(value, dict):
+                    user[key] = process_user(value)
+                elif isinstance(value, list):
+                    user[key] = [process_user(v) if isinstance(v, dict) else v for v in value]
+            return user
+
+        # Process each user in the list
+        processed_users_list = [process_user(user) for user in users_list]
+
+        print(f'processed_users_list= {processed_users_list}')
+        for user in processed_users_list:
+            if 'user_id' in user:
+                print(user['user_id'])
+            if 'user_name' in user:
+                print(user['user_name'])
+        return processed_users_list
 
 
 @namespace.route('/get-id-user/<string:user_id>', methods=['GET', 'OPTIONS'])
@@ -81,10 +106,14 @@ class PutUserById(Resource):
     @namespace.marshal_with(user_data_model)
     def put(self, user_id):
         '''update user by id'''
+        print("1")
         update_user = request.json
-        user_service.validate_user(update_user)
+        print(update_user)
+        # user_service.validate_user(update_user)
         try:
             result = user_service.update(user_id, update_user)
+            print(f'result = {result}')
+            print(f'result.modified_count = {result.modified_count}')
             if result.modified_count > 0:
                 updated_user = user_service.get_by_id(user_id)
                 return updated_user
