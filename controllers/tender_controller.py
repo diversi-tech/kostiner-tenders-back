@@ -1,10 +1,14 @@
 from datetime import datetime
 import jwt
 from flask_jwt_extended import verify_jwt_in_request, jwt_required
-from flask_restx import Resource, abort
-from flask import request
+from flask_restx import Resource, fields
+from flask import request, jsonify
 from pymongo.results import InsertManyResult
 from werkzeug.datastructures import FileStorage
+# from flask_restx.errors import abort
+from flask import abort
+from werkzeug.exceptions import NotFound
+
 
 from dal.tender_repo import DataAlreadyExistsError
 from services import tender_service
@@ -15,9 +19,8 @@ from models_swagger.tender_model import namespace_tender as namespace, tender_mo
 @namespace.route('/get-all-tenders')
 class GetAllTenders(Resource):
     @namespace.doc(params={
-        'search date': 'search date of the range (format: DD-MM-YYYY)'
+        'search date': 'search date of the range (format: YYYY-MM-DD)'
     })
-    @namespace.marshal_list_with(tender_model)
     @namespace.response(401, 'Invalid token')
     @namespace.response(400, 'Invalid date')
     @jwt_required()
@@ -29,17 +32,42 @@ class GetAllTenders(Resource):
             user = user_service.get_by_id(user_id)
             search_date = request.args.get('search date')
             print(f'tender controller search date: {search_date}')
-            list_array = tender_service.get_all(user, search_date)
-            return list_array, 200
-        except ValueError as e:
-            abort(400, str(e))
+            list_obj_tenders = \
+                tender_service.convert_datetime_to_str(
+                    tender_service.convert_objectid_to_str(
+                        tender_service.get_all(user, search_date)))
+            return list_obj_tenders, 200
+        except NotFound as e:
+            error_message = {'message': str(e)}
+            print(f'except NotFound as e: {error_message}')
+            namespace.abort(404, message=f'{str(e)}')
+        except (ValueError, TypeError) as e:
+            print(f'except (ValueError, TypeError) as e: {e}')
+            namespace.abort(400, message=f'{str(e)}')
         except jwt.ExpiredSignatureError:
-            abort(401, "Token has expired")
+            namespace.abort(401, "Token has expired")
         except jwt.InvalidTokenError:
-            abort(401, "Invalid token")
+            namespace.abort(401, "Invalid token")
         except Exception as e:
             print(f'tender controller Exception msg: {e}')
-            abort(400, str(e))
+            namespace.abort(400, str(e))
+
+
+@namespace.route('/get-id-by-name/<string:tender_name>')
+@namespace.response(404, 'tender not found')
+class GetIdByName(Resource):
+    @namespace.doc('get_id_tender_by_name')
+    def get(self, tender_name):
+        '''get id tender by name'''
+        try:
+            tender_id = tender_service.get_id_by_name(tender_name)
+            return {'tender_id': tender_id}, 200
+        except ValueError as ve:
+            namespace.abort(404, str(ve))
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            namespace.abort(400, "An unexpected error occurred")
+
 
 
 @namespace.route('/get-id-tender/<string:tender_id>')
@@ -122,8 +150,69 @@ class DeleteTenderById(Resource):
         namespace.abort(404, f"tender {tender_id} doesn't exist")
 
 
+@namespace.route('/search')
+class TenderSearch(Resource):
+    @namespace.doc('search_tender')
+    @namespace.expect(namespace.model('SearchCriteria', {
+        'body_name': fields.String(required=False, description='body_names'),
+        'tender_number_name': fields.String(required=False, description='tender_number'),
+        'published_date': fields.Date(required=False, description='published_date'),
+        'submission_date': fields.Date(required=False, description='submission_date'),
+        "category": fields.List(fields.String, required=False, description='category'),
+        'winner_name': fields.String(required=False, description='winner_name'),
+        'details_winner': fields.String(required=False, description='details_winner'),
+        'participants': fields.List(fields.String, required=False, description='participants'),
+        'amount_bid': fields.Float(required=False, description='amount_bid'),
+        'estimate': fields.Float(required=False, description='estimate')
+    }))
+    @namespace.marshal_list_with(tender_model)
+    @namespace.response(401, 'Invalid token')
+    @namespace.response(400, 'Invalid date')
+    @jwt_required()
+    def post(self):
+        '''Search for tenders'''
+        try:
+            detail = verify_jwt_in_request()
+            user_id = detail[1].get("user_id")
+            user = user_service.get_by_id(user_id)
+            print(f'tender controller search date: {user}')
+            criteria = request.json
+            if not criteria:
+                namespace.abort(400, "Search criteria cannot be empty")
+
+            # Convert string dates to datetime objects if provided
+            if 'published_date' in criteria:
+                try:
+                    criteria['published_date'] = datetime.strptime(criteria['published_date'], '%Y-%m-%d')
+                except ValueError:
+                    namespace.abort(400, "Invalid published_date format")
+
+            if 'submission_date' in criteria:
+                try:
+                    criteria['submission_date'] = datetime.strptime(criteria['submission_date'], '%Y-%m-%d')
+                except ValueError:
+                    namespace.abort(400, "Invalid submission_date format")
+
+            results = tender_service.search(user, criteria)
+            print(f'results in controller {results}')
+            return results, 200
+
+        except ValueError as e:
+            abort(400, str(e))
+        except jwt.ExpiredSignatureError:
+            abort(401, "Token has expired")
+        except jwt.InvalidTokenError:
+            abort(401, "Invalid token")
+        except Exception as e:
+            print(f'tender controller Exception msg: {e}')
+            abort(400, str(e))
+
+
+namespace.add_resource(TenderSearch, '/search')
+namespace.add_resource(GetIdByName, '/get-id-by-name/<string:tender_name>')
 namespace.add_resource(GetAllTenders, '/get-all-tenders')
 namespace.add_resource(GetTenderById, '/get-id-tender/<string:tender_id>')
 namespace.add_resource(CSVUpload, '/post-upload-csv')
 namespace.add_resource(PutTenderById, '/update-tender/<string:tender_id>')
 namespace.add_resource(DeleteTenderById, '/delete-tender/<string:tender_id>')
+

@@ -1,3 +1,5 @@
+from flask_restx import abort
+
 from dal.product_repo import  product_repo
 from services.base_service import base_service
 
@@ -19,8 +21,15 @@ class product_service(base_service):
             return self.repo.delete_by_category(category)
 
         def create(self, data):
-            print(f'product service create {data}')
+            # ולידציה לשדות המחיר
+            if not isinstance(data.get('price_subscription'), (int, float)) or not isinstance(data.get('price_monthly'), (int, float)):
+                abort(400, 'price_subscription ו-price_monthly חייבים להיות מספרים תקינים.')
+
             return self.repo.insert(data)
 
         def update(self, category, data):
-            return self.repo.update_by_category(category , data)
+            # ולידציה לשדות המחיר
+            if not isinstance(data.get('price_subscription'), (int, float)) or not isinstance(data.get('price_monthly'),(int, float)):
+                abort(400, 'price_subscription ו-price_monthly חייבים להיות מספרים תקינים.')
+
+            return self.repo.update_by_category(category, data)
