@@ -19,6 +19,7 @@ class user_service(base_service):
 
     def create(self, data):
         print(f'user_service create')
+
         if data['subscriptions']['plan_type'] == 'Subscription':
             data['subscriptions']['end_date'] = datetime.strptime(data['subscriptions']['start_date'],
                                                                   '%Y-%m-%d') + relativedelta(years=1)
