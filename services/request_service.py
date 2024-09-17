@@ -44,7 +44,7 @@ class request_service(base_service):
             'approved': False,
             'date': datetime.utcnow()
         }
-
+        print(f'data= {data}')
         print(f'request_service create data')
         result = self.repo.insert(data)
         print("result", result)

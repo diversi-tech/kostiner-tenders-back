@@ -45,6 +45,15 @@ class Login(Resource):
         if is_valid:
             user_id = str(user['user_id'])
             user_role = user['role']
+            user_data = {
+                "user_name": user['user_name'],
+                "email": user['email'],
+                "first_name": user['first_name'],
+                "last_name": user['last_name'],
+                "business_name": user['business_name'],
+                "user_id": user_id,  # השתמש במחרוזת כאן
+                "role": user_role
+            }
             additional_claims = {
                 'role': user_role,
                 'user_id': user_id
@@ -54,7 +63,8 @@ class Login(Resource):
 
             return {
                 'access_token': f'Bearer {access_token}',
-                'refresh_token': f'Bearer {refresh_token}'
+                'refresh_token': f'Bearer {refresh_token}',
+                'user': f'{user_data}'
             }, 200
         else:
             return {'message': 'Invalid credentials'}, 401
